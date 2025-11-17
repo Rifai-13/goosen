@@ -48,8 +48,13 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: HomeAppBar(
         searchController: _searchController,
       ),
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
+      body: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+      // backgroundColor: Colors.white,
+      child: SingleChildScrollView(
+        physics: BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -126,6 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+      )
     );
   }
 }
