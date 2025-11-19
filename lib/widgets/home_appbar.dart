@@ -7,7 +7,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   
   const HomeAppBar({
     Key? key,
-    required this.searchController, // <-- Wajibkan controller
+    required this.searchController,
   }) : super(key: key);
 
   @override
@@ -18,13 +18,10 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       
       // 2. GANTI 'GestureDetector' DENGAN 'TextField'
       title: TextField(
-        controller: searchController, // <-- Pasang remote-nya di sini
+        controller: searchController,
         decoration: InputDecoration(
-          // Teks placeholder
           hintText: "Cari makanan atau resto...",
-          // Hilangkan garis bawah
           border: InputBorder.none, 
-          // Atur border rounded
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30.0),
             borderSide: BorderSide(color: Colors.grey[300]!),
