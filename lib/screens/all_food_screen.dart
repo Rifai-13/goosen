@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import '../widgets/home_appbar.dart'; // Pastikan import ini sesuai lokasi file HomeAppBar kamu
 
-// --- Data Dummy Makanan ---
+// ==========================================
+// 1. DEFINISI CLASS MODEL & DATA DUMMY
+// ==========================================
+
 class FoodItemData {
   final String imageUrl;
   final String name;
@@ -19,7 +23,6 @@ class FoodItemData {
   });
 }
 
-// List Data Makanan (Menggunakan URL Google yang Anda berikan)
 final List<FoodItemData> foodItems = [
   FoodItemData(
     imageUrl:
@@ -58,22 +61,56 @@ final List<FoodItemData> foodItems = [
     ratingCount: '1.2K',
   ),
 ];
-// --- Akhir Data Dummy Makanan ---
 
-class AllFoodScreen extends StatelessWidget {
+// ==========================================
+// 2. SCREEN UTAMA
+// ==========================================
+
+class AllFoodScreen extends StatefulWidget {
   const AllFoodScreen({super.key});
+
+  @override
+  State<AllFoodScreen> createState() => _AllFoodScreenState();
+}
+
+class _AllFoodScreenState extends State<AllFoodScreen> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildCustomAppBar(context),
+      backgroundColor: Colors.white,
+      // App Bar Reuse
+      appBar: HomeAppBar(
+        searchController: _searchController,
+        showProfile: false, // Profile Hilang
+        // Tombol X di sebelah kiri Search, Sejajar
+        customLeading: IconButton(
+          icon: const Icon(Icons.close, size: 28, color: Colors.black),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // --- Bagian Header Rating ---
               const Text(
                 'Top-rated by other foodies',
                 style: TextStyle(
@@ -84,19 +121,14 @@ class AllFoodScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // --- Bagian Daftar Makanan Dinamis ---
+              // Grid Makanan
               Wrap(
                 spacing: 16.0,
                 runSpacing: 16.0,
                 children: foodItems.map((item) {
                   return _buildFoodItem(
                     context: context,
-                    imageUrl: item.imageUrl,
-                    name: item.name,
-                    distance: item.distance,
-                    time: item.time,
-                    rating: item.rating,
-                    ratingCount: item.ratingCount,
+                    item: item,
                   );
                 }).toList(),
               ),
@@ -107,177 +139,85 @@ class AllFoodScreen extends StatelessWidget {
     );
   }
 
-  // Widget untuk membuat satu item/card makanan (Telah direvisi)
   Widget _buildFoodItem({
     required BuildContext context,
-    required String imageUrl,
-    required String name,
-    required String distance,
-    required String time,
-    required double rating,
-    required String ratingCount,
+    required FoodItemData item,
   }) {
-    // Hitung lebar item secara dinamis
     final screenWidth = MediaQuery.of(context).size.width;
-    final itemWidth = (screenWidth - 48) / 2;
+    // Rumus lebar card (total lebar - padding kiri kanan - spasi tengah) / 2
+    final itemWidth = (screenWidth - 32 - 16) / 2;
 
     return Container(
       width: itemWidth,
-      // Tambahkan BoxDecoration dan Shadow di sini
       decoration: BoxDecoration(
-        color: Colors
-            .white, // Penting: Berikan warna latar belakang agar shadow terlihat
-        borderRadius: BorderRadius.circular(8.0),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(
-              0.3,
-            ), // Warna dan transparansi bayangan
-            spreadRadius: 1, // Menyebar bayangan ke luar
-            blurRadius:
-                4, // Tingkat keburaman bayangan (semakin besar semakin halus)
-            offset: const Offset(0, 2), // Posisi bayangan (x, y)
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Bagian Gambar Makanan
+          // Gambar
           ClipRRect(
-            // Border Radius harus ada di sini dan di Container luar agar sudut terlihat bulat
-            borderRadius: BorderRadius.circular(8.0),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12.0)),
             child: Image.network(
-              imageUrl,
-              height: itemWidth,
-              width: itemWidth,
+              item.imageUrl,
+              height: itemWidth, // Tinggi = Lebar (Kotak)
+              width: double.infinity,
               fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  height: itemWidth,
-                  width: itemWidth,
-                  color: Colors.grey[200],
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) => Container(
+              errorBuilder: (ctx, error, stack) => Container(
                 height: itemWidth,
-                width: itemWidth,
-                color: Colors.red[100],
-                child: const Center(
-                  child: Icon(Icons.error, color: Colors.red),
-                ),
+                color: Colors.grey[200],
+                child: const Icon(Icons.broken_image),
               ),
             ),
           ),
-
-          // --- Teks di bawah Gambar (tetap sama) ---
-          const SizedBox(height: 8),
-
-          // Teks Jarak dan Waktu
+          // Info
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: Text(
-              '$distance km . $time',
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
-            ),
-          ),
-          // ... (Sisa kode untuk Nama dan Rating)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: Text(
-              name,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // Bagian Rating
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: Row(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.star, color: Colors.amber, size: 16),
-                const SizedBox(width: 4),
                 Text(
-                  rating.toString(),
+                  '${item.distance} • ${item.time}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item.name,
                   style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      fontSize: 14, fontWeight: FontWeight.bold),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const Text(
-                  ' . ',
-                  style: TextStyle(fontSize: 12, color: Colors.black54),
-                ),
-                Text(
-                  '$ratingCount+ ratings',
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.star, color: Colors.amber, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${item.rating}',
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '(${item.ratingCount})',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
         ],
-      ),
-    );
-  }
-
-  // Widget untuk membuat AppBar kustom (header)
-  PreferredSizeWidget _buildCustomAppBar(BuildContext context) {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(120.0),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              // Baris atas: Icon X
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  padding: EdgeInsets.zero, // Hapus padding default IconButton
-                  constraints: const BoxConstraints(), // Hapus batasan default
-                  icon: const Icon(Icons.close, size: 28),
-                  onPressed: () {
-                    // Logika untuk menutup layar
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Baris bawah: Search Bar
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: const TextField(
-                  decoration: InputDecoration(
-                    icon: Icon(Icons.search, color: Colors.black54),
-                    hintText: 'what food is on your mind?',
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: 8,
-                    ), // Sesuaikan tinggi TextField
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

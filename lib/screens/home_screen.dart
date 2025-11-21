@@ -48,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: HomeAppBar(searchController: _searchController),
+      appBar: HomeAppBar(searchController: _searchController, showProfile: true,),
       body: GestureDetector(
         onTap: () {
           FocusScope.of(context).unfocus();
