@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/home_appbar.dart'; // Pastikan import ini sesuai lokasi file HomeAppBar kamu
+import '../widgets/home_appbar.dart';
+import '../screens/restaurant_menu_screen.dart';
 
 // ==========================================
 // 1. DEFINISI CLASS MODEL & DATA DUMMY
@@ -147,77 +148,89 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
     // Rumus lebar card (total lebar - padding kiri kanan - spasi tengah) / 2
     final itemWidth = (screenWidth - 32 - 16) / 2;
 
-    return Container(
-      width: itemWidth,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 2),
+return GestureDetector(
+      onTap: () {
+        // 2. Navigasi ke halaman Detail Menu
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const RestaurantMenuScreen(),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Gambar
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12.0)),
-            child: Image.network(
-              item.imageUrl,
-              height: itemWidth, // Tinggi = Lebar (Kotak)
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (ctx, error, stack) => Container(
+        );
+      },
+
+child: Container(
+        width: itemWidth,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Gambar
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12.0)),
+              child: Image.network(
+                item.imageUrl,
                 height: itemWidth,
-                color: Colors.grey[200],
-                child: const Icon(Icons.broken_image),
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (ctx, error, stack) => Container(
+                  height: itemWidth,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.broken_image),
+                ),
               ),
             ),
-          ),
-          // Info
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${item.distance} • ${item.time}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item.name,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.bold),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(Icons.star, color: Colors.amber, size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${item.rating}',
-                      style: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '(${item.ratingCount})',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                    ),
-                  ],
-                ),
-              ],
+            // Info Teks
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${item.distance} • ${item.time}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.name,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.bold),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${item.rating}',
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '(${item.ratingCount})',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
