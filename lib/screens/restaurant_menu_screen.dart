@@ -350,83 +350,93 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                       
                       const SizedBox(width: 16),
                       
-                      // GAMBAR KANAN + BUTTON LOGIC
-                      Stack(
-                        alignment: Alignment.bottomCenter,
-                        clipBehavior: Clip.none,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12.0),
-                            child: Image.network(
-                              item.imageUrl,
-                              width: 110, height: 110, fit: BoxFit.cover,
-                              errorBuilder: (ctx, error, stack) => Container(width: 110, height: 110, color: Colors.grey[300]),
+                      SizedBox(
+                        // Gambar 110 + Tombol Overlap 32 = 142. Kita buletin jadi 145.
+                        height: 140, 
+                        width: 110, 
+                        child: Stack(
+                          alignment: Alignment.topCenter, // Gambar nempel atas
+                          children: [
+                            // GAMBAR MENU
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12.0),
+                              child: Image.network(
+                                item.imageUrl,
+                                width: 110, height: 110, fit: BoxFit.cover,
+                                errorBuilder: (ctx, error, stack) => Container(width: 110, height: 110, color: Colors.grey[300]),
+                              ),
                             ),
-                          ),
-                          
-                          Positioned(
-                            bottom: -32,
-                            child: isSelected 
-                            // TAMPILAN COUNTER (- 1 +)
-                            ? Container(
-                                height: 32, 
-                                width: 90,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Colors.green, width: 1),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    InkWell(
-                                      onTap: () {
-                                        setState(() {
-                                          item.quantity--;
-                                        });
-                                      },
-                                      child: const Icon(Icons.remove, color: Colors.green, size: 20),
-                                    ),
-                                    Text(
-                                      "${item.quantity}",
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                    ),
-                                    InkWell(
-                                      onTap: () {
-                                        setState(() {
-                                          item.quantity++;
-                                        });
-                                      },
-                                      child: const Icon(Icons.add, color: Colors.green, size: 20),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            // TAMPILAN TOMBOL BIASA (Tambah)
-                            : InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    item.quantity = 1;
-                                  });
-                                },
-                                child: Container(
-                                  height: 32, width: 80,
+                            
+                            // TOMBOL TAMBAH (Posisinya tetap menggantung di bawah)
+                            Positioned(
+                              bottom: 0, // Nempel di dasar kotak 145px (jadi visualnya di bawah gambar)
+                              child: isSelected 
+                              // TAMPILAN COUNTER (- 1 +)
+                              ? Container(
+                                  height: 32, 
+                                  width: 90,
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(color: Colors.green, width: 1),
+                                    boxShadow: [
+                                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))
+                                    ]
                                   ),
-                                  child: const Center(
-                                    child: Text(
-                                      "Tambah",
-                                      style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            item.quantity--;
+                                          });
+                                        },
+                                        child: const Icon(Icons.remove, color: Colors.green, size: 20),
+                                      ),
+                                      Text(
+                                        "${item.quantity}",
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                      ),
+                                      InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            item.quantity++;
+                                          });
+                                        },
+                                        child: const Icon(Icons.add, color: Colors.green, size: 20),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              // TAMPILAN TOMBOL BIASA (Tambah)
+                              : InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      item.quantity = 1;
+                                    });
+                                  },
+                                  child: Container(
+                                    height: 32, width: 80,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: Colors.green, width: 1),
+                                      boxShadow: [
+                                        BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))
+                                      ]
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        "Tambah",
+                                        style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -436,7 +446,7 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
           ),
         ),
         
-        const SizedBox(height: 48),
+        const SizedBox(height: 18),
         Divider(thickness: 1, height: 1, color: Colors.grey[300]),
         const SizedBox(height: 16),
       ],
