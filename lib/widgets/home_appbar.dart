@@ -1,61 +1,65 @@
 import 'package:flutter/material.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
-  
-  // 1. Terima controller dari luar
   final TextEditingController searchController;
-  
+  final bool showProfile;
+  final VoidCallback? onSearchTap;
+  final Widget? customLeading;
+
   const HomeAppBar({
     Key? key,
-    required this.searchController, // <-- Wajibkan controller
+    required this.searchController,
+    this.showProfile = true,
+    this.onSearchTap,
+    this.customLeading,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: Colors.white,
-      elevation: 1.0, 
-      
-      // 2. GANTI 'GestureDetector' DENGAN 'TextField'
+      elevation: 1.0,
+      leading: customLeading,
+      automaticallyImplyLeading: true,
+      iconTheme: IconThemeData(color: Colors.grey[800]),
+
       title: TextField(
-        controller: searchController, // <-- Pasang remote-nya di sini
+        controller: searchController,
+        onTap: onSearchTap,
+        readOnly: onSearchTap != null,
         decoration: InputDecoration(
-          // Teks placeholder
-          hintText: "Cari makanan atau resto...",
-          // Hilangkan garis bawah
-          border: InputBorder.none, 
-          // Atur border rounded
+          hintText: "Cari makanan...",
+          border: InputBorder.none,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30.0),
             borderSide: BorderSide(color: Colors.grey[300]!),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30.0),
-            borderSide: BorderSide(color: Colors.green), 
+            borderSide: const BorderSide(color: Colors.green),
           ),
-          // Ikon di depan
           prefixIcon: Icon(Icons.search, color: Colors.grey[700]),
-          // Background
           filled: true,
           fillColor: Colors.grey[100],
-          // Atur padding internal biar rapi
-          contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
         ),
-        style: TextStyle(fontSize: 16),
+        style: const TextStyle(fontSize: 16),
       ),
-      
-      // 3. ACTIONS (Ikon profile) tetap sama
-      actions: [
-        IconButton(
-          icon: Icon(Icons.person_outline, color: Colors.green, size: 36),
-          onPressed: () {
-            print("Profile diklik!");
-          },
-        ),
-      ],
+
+      // 3. LOGIC: Cek jika showProfile true, tampilkan icon. Jika false, list kosong.
+      actions: showProfile
+          ? [
+              IconButton(
+                icon: const Icon(Icons.person_outline, color: Colors.green, size: 36),
+                onPressed: () {
+                  print("Profile diklik!");
+                },
+              ),
+            ]
+          : [SizedBox(width: 16)],
     );
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
