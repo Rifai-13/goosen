@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 // Import halaman-halaman yang akan jadi isi tab
-import 'activity_page.dart';
+import 'activity_screen.dart';
 import 'home_screen.dart';
 
 // Ini adalah "Otak" yang memegang layout BottomNavBar
@@ -17,7 +17,7 @@ class _MainScreenState extends State<MainScreen> {
   // Daftar halaman/widget yang akan jadi isi dari tiap tab
   static final List<Widget> _pages = <Widget>[
     const HomeScreen(),
-    const ActivityPage(),
+    const ActivityScreen(),
   ];
 
   // Fungsi yang dipanggil saat tab di-klik
