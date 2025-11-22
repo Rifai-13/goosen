@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import './location_screen.dart';
 
 // ==========================================
 // 1. MODEL DATA
@@ -258,7 +259,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(width: 12),
             ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LocationScreen(),
+                  ),
+                );
+              },
               icon: const Icon(
                 Icons.location_on_outlined,
                 size: 20,
