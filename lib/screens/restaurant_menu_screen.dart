@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'checkout_screen.dart';
 
 // ==========================================
 // 1. MODEL DATA
@@ -50,9 +51,7 @@ class DashedLine extends StatelessWidget {
             return SizedBox(
               width: dashWidth,
               height: height,
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: color),
-              ),
+              child: DecoratedBox(decoration: BoxDecoration(color: color)),
             );
           }),
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -84,7 +83,8 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
       price: 32000,
       rating: 4.9,
       reviewCount: "100+",
-      imageUrl: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500&q=80",
+      imageUrl:
+          "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500&q=80",
     ),
     MenuItem(
       title: "Chicken katsu Fries",
@@ -92,7 +92,8 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
       price: 38000,
       rating: 4.8,
       reviewCount: "80+",
-      imageUrl: "https://images.unsplash.com/photo-1619860860774-1e7e17343432?w=500&q=80",
+      imageUrl:
+          "https://images.unsplash.com/photo-1619860860774-1e7e17343432?w=500&q=80",
     ),
     MenuItem(
       title: "Katsu Mentai Rice",
@@ -100,13 +101,18 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
       price: 45000,
       rating: 4.9,
       reviewCount: "200+",
-      imageUrl: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500&q=80",
+      imageUrl:
+          "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500&q=80",
     ),
   ];
 
   // Helper format duit
   String formatCurrency(int amount) {
-    return NumberFormat.currency(locale: 'id', symbol: '', decimalDigits: 0).format(amount);
+    return NumberFormat.currency(
+      locale: 'id',
+      symbol: '',
+      decimalDigits: 0,
+    ).format(amount);
   }
 
   @override
@@ -121,20 +127,20 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
 
     // 2. LOGIC OTOMATIS: Cek apakah ada item?
     // Kalau totalItems > 0, maka showCart TRUE. Kalau 0, FALSE.
-    bool showCart = totalItems > 0; 
+    bool showCart = totalItems > 0;
 
     return Scaffold(
       backgroundColor: Colors.white,
-      
+
       // --- FLOATING ACTION BUTTON (ANIMASI SLIDE UP) ---
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: AnimatedSlide(
         // Logika: Kalau showCart true, posisi normal (0).
         // Kalau false, turun ke bawah sejauh 2x (hilang).
-        offset: showCart ? Offset.zero : const Offset(0, 2), 
-        duration: const Duration(milliseconds: 400), 
+        offset: showCart ? Offset.zero : const Offset(0, 2),
+        duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
-        
+
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16.0),
           height: 60,
@@ -155,7 +161,15 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
             child: InkWell(
               borderRadius: BorderRadius.circular(30),
               onTap: () {
-                print("Checkout diklik");
+                if (totalItems > 0) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const CheckoutScreen(), // Panggil CheckoutScreen
+                    ),
+                  );
+                }
               },
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -168,7 +182,10 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                       children: [
                         Text(
                           "$totalItems item",
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const Text(
                           "Diantar dari Katsugi Bento...",
@@ -180,12 +197,19 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                       children: [
                         Text(
                           formatCurrency(totalPrice),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(width: 8),
-                        const Icon(Icons.shopping_bag_outlined, color: Colors.white),
+                        const Icon(
+                          Icons.shopping_bag_outlined,
+                          color: Colors.white,
+                        ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -204,7 +228,7 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 100), 
+                padding: const EdgeInsets.only(bottom: 100),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
@@ -213,10 +237,16 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                       const SizedBox(height: 24),
                       const Text(
                         "Makanan",
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
-                      const DashedLine(color: Color(0xFFCCCCCC), dashWidth: 4.0),
+                      const DashedLine(
+                        color: Color(0xFFCCCCCC),
+                        dashWidth: 4.0,
+                      ),
                       const SizedBox(height: 24),
 
                       // Generate List Menu dari Data
@@ -264,11 +294,18 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                 const Expanded(
                   child: Text(
                     "Katsugi Bento by...",
-                    style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                IconButton(icon: const Icon(Icons.search, color: Colors.black), onPressed: () {}),
+                IconButton(
+                  icon: const Icon(Icons.search, color: Colors.black),
+                  onPressed: () {},
+                ),
               ],
             ),
           ),
@@ -319,41 +356,58 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                           children: [
                             Text(
                               item.title,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                const Icon(Icons.star, color: Colors.amber, size: 16),
+                                const Icon(
+                                  Icons.star,
+                                  color: Colors.amber,
+                                  size: 16,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   "${item.rating} (${item.reviewCount})",
-                                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 6),
                             Text(
                               item.desc,
-                              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 12),
                             Text(
                               formatCurrency(item.price),
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(width: 16),
-                      
+
                       SizedBox(
                         // Gambar 110 + Tombol Overlap 32 = 142. Kita buletin jadi 145.
-                        height: 140, 
-                        width: 110, 
+                        height: 140,
+                        width: 110,
                         child: Stack(
                           alignment: Alignment.topCenter, // Gambar nempel atas
                           children: [
@@ -362,78 +416,122 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                               borderRadius: BorderRadius.circular(12.0),
                               child: Image.network(
                                 item.imageUrl,
-                                width: 110, height: 110, fit: BoxFit.cover,
-                                errorBuilder: (ctx, error, stack) => Container(width: 110, height: 110, color: Colors.grey[300]),
+                                width: 110,
+                                height: 110,
+                                fit: BoxFit.cover,
+                                errorBuilder: (ctx, error, stack) => Container(
+                                  width: 110,
+                                  height: 110,
+                                  color: Colors.grey[300],
+                                ),
                               ),
                             ),
-                            
+
                             // TOMBOL TAMBAH (Posisinya tetap menggantung di bawah)
                             Positioned(
-                              bottom: 0, // Nempel di dasar kotak 145px (jadi visualnya di bawah gambar)
-                              child: isSelected 
-                              // TAMPILAN COUNTER (- 1 +)
-                              ? Container(
-                                  height: 32, 
-                                  width: 90,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: Colors.green, width: 1),
-                                    boxShadow: [
-                                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))
-                                    ]
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      InkWell(
-                                        onTap: () {
-                                          setState(() {
-                                            item.quantity--;
-                                          });
-                                        },
-                                        child: const Icon(Icons.remove, color: Colors.green, size: 20),
+                              bottom:
+                                  0, // Nempel di dasar kotak 145px (jadi visualnya di bawah gambar)
+                              child: isSelected
+                                  // TAMPILAN COUNTER (- 1 +)
+                                  ? Container(
+                                      height: 32,
+                                      width: 90,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: Colors.green,
+                                          width: 1,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(
+                                              0.1,
+                                            ),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
                                       ),
-                                      Text(
-                                        "${item.quantity}",
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          InkWell(
+                                            onTap: () {
+                                              setState(() {
+                                                item.quantity--;
+                                              });
+                                            },
+                                            child: const Icon(
+                                              Icons.remove,
+                                              color: Colors.green,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          Text(
+                                            "${item.quantity}",
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          InkWell(
+                                            onTap: () {
+                                              setState(() {
+                                                item.quantity++;
+                                              });
+                                            },
+                                            child: const Icon(
+                                              Icons.add,
+                                              color: Colors.green,
+                                              size: 20,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      InkWell(
-                                        onTap: () {
-                                          setState(() {
-                                            item.quantity++;
-                                          });
-                                        },
-                                        child: const Icon(Icons.add, color: Colors.green, size: 20),
+                                    )
+                                  // TAMPILAN TOMBOL BIASA (Tambah)
+                                  : InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          item.quantity = 1;
+                                        });
+                                      },
+                                      child: Container(
+                                        height: 32,
+                                        width: 80,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.green,
+                                            width: 1,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(
+                                                0.1,
+                                              ),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Center(
+                                          child: Text(
+                                            "Tambah",
+                                            style: TextStyle(
+                                              color: Colors.green,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                    ],
-                                  ),
-                                )
-                              // TAMPILAN TOMBOL BIASA (Tambah)
-                              : InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      item.quantity = 1;
-                                    });
-                                  },
-                                  child: Container(
-                                    height: 32, width: 80,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: Colors.green, width: 1),
-                                      boxShadow: [
-                                        BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))
-                                      ]
                                     ),
-                                    child: const Center(
-                                      child: Text(
-                                        "Tambah",
-                                        style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ),
-                                ),
                             ),
                           ],
                         ),
@@ -445,7 +543,7 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
             ],
           ),
         ),
-        
+
         const SizedBox(height: 18),
         Divider(thickness: 1, height: 1, color: Colors.grey[300]),
         const SizedBox(height: 16),
