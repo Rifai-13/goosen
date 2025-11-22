@@ -165,8 +165,9 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
+                      // PASTI SUDAH ADA variabel totalPrice DARI perhitungan item di RestaurantMenuScreen
                       builder: (context) =>
-                          const CheckoutScreen(), // Panggil CheckoutScreen
+                          CheckoutScreen(initialSubtotal: totalPrice),
                     ),
                   );
                 }
