@@ -1,6 +1,6 @@
 # goosen
 
-Applikasi untuk melakukan pemesanan makanan.
+adalah aplikasi pemesanan makanan berbasis mobile yang dirancang untuk memberikan pengalaman kuliner yang cepat dan praktis. Aplikasi ini memudahkan pengguna untuk menjelajahi menu, memesan makanan favorit, dan memantau status pesanan secara real-time.
 
 ## A - 202210370311261 - MUHAMMAD RIFAI - Rifai-13
 
