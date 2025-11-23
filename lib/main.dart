@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:goosen/screens/main_screen.dart';
-import 'screens/home_screen.dart';
+import './screens/splash_screen.dart';
+
 
 
 void main() {
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      home: MainScreen(),
+      home: SplashScreen(),
     );
   }
 }
