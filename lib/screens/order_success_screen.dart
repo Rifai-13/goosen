@@ -1,8 +1,7 @@
 // order_success_screen.dart
 
 import 'package:flutter/material.dart';
-// Asumsikan ActivityScreen ada di path yang benar (misalnya 'activity_screen.dart')
-import 'activity_screen.dart'; // <--- PASTIKAN IMPORT FILE INI
+import 'main_screen.dart';
 
 class OrderSuccessScreen extends StatelessWidget {
   const OrderSuccessScreen({super.key});
@@ -11,7 +10,7 @@ class OrderSuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      
+
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
@@ -35,9 +34,9 @@ class OrderSuccessScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // --- 2. Teks Konfirmasi ---
               const Text(
                 'Congratulation',
@@ -50,9 +49,9 @@ class OrderSuccessScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 16, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 60),
-              
+
               // --- 3. Tombol Activity (Revisi Navigasi) ---
               SizedBox(
                 width: double.infinity,
@@ -61,11 +60,14 @@ class OrderSuccessScreen extends StatelessWidget {
                   onPressed: () {
                     // MENGGANTI LAYAR SAAT INI DENGAN ActivityScreen
                     // Penggunaan pushReplacement memastikan layar Checkout dan Success dihapus dari stack.
-                    Navigator.pushReplacement( 
+                    Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const ActivityScreen(), // <--- NAVIGASI KE ACTIVITY SCREEN
+                        builder: (context) => const MainScreen(
+                          initialIndex: 1,
+                        ), // Buka tab Activity
                       ),
+                      (route) => false, // Hapus semua rute di belakangnya
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -76,7 +78,11 @@ class OrderSuccessScreen extends StatelessWidget {
                   ),
                   child: const Text(
                     'Activity',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
