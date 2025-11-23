@@ -22,22 +22,22 @@ adalah aplikasi pemesanan makanan berbasis mobile yang dirancang untuk memberika
 
   <tr>
     <td><b>Product Owner</b></td>
-    <td>Arthur</td>
-    <td>Arthur</td>
-    <td>Arthur</td>
+    <td>Muhammad Rifai</td>
+    <td>Muhammad Rifai</td>
+    <td>Muhammad Rifai</td>
   </tr>
 
   <tr>
     <td><b>Scrum Master</b></td>
-    <td>Arthur</td>
-    <td>Arthur</td>
-    <td>Arthur</td>
+    <td>Muhammad Rifai</td>
+    <td>Muhammad Rifai</td>
+    <td>Muhammad Rifai</td>
   </tr>
 
   <tr>
     <td><b>Tim Pengembangan</b></td>
-    <td>Arthur</td>
-    <td>Arthur</td>
-    <td>Arthur</td>
+    <td>Muhammad Rifai</td>
+    <td>Muhammad Rifai</td>
+    <td>Muhammad Rifai</td>
   </tr>
 </table>
