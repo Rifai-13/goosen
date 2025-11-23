@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'manage_account_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -66,7 +67,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        
+
                         // INFO USER
                         Expanded(
                           child: Column(
@@ -86,7 +87,8 @@ class ProfileScreen extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[600],
-                                  decoration: TextDecoration.underline, // Garis bawah email
+                                  decoration: TextDecoration
+                                      .underline, // Garis bawah email
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -112,13 +114,24 @@ class ProfileScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: InkWell(
                     onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ManageAccountScreen(),
+                        ),
+                      );
                       // Aksi saat tombol Manage Account diklik
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 16.0,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(30), // Sudut sangat bulat
+                        borderRadius: BorderRadius.circular(
+                          30,
+                        ), // Sudut sangat bulat
                         border: Border.all(color: Colors.grey.shade400),
                       ),
                       child: const Row(
@@ -135,7 +148,11 @@ class ProfileScreen extends StatelessWidget {
                               ),
                             ),
                           ),
-                          Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
                         ],
                       ),
                     ),
