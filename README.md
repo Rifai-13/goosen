@@ -7,13 +7,37 @@ adalah aplikasi pemesanan makanan berbasis mobile yang dirancang untuk memberika
 ## Link Figma
 [Desain UI/UX Goosen](https://www.figma.com/design/a19VT4xajHd6NBKoTyDvKh/Rekayasa-Interaksi?node-id=0-1&t=OL0x8Pp5FPLK0v0A-1)
 
-This project is a starting point for a Flutter application.
+## Pembagian Tugas
+<table>
+  <tr>
+    <th colspan="4" style="text-align:center;">Aplikasi Goosen</th>
+  </tr>
+  
+  <tr>
+    <th>Agile Organization</th>
+    <th>Auth & User Profile</th>
+    <th>Food Discovery & Menu</th>
+    <th>Order & Transaction</th>
+  </tr>
 
-A few resources to get you started if this is your first Flutter project:
+  <tr>
+    <td><b>Product Owner</b></td>
+    <td>Arthur</td>
+    <td>Arthur</td>
+    <td>Arthur</td>
+  </tr>
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+  <tr>
+    <td><b>Scrum Master</b></td>
+    <td>Arthur</td>
+    <td>Arthur</td>
+    <td>Arthur</td>
+  </tr>
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+  <tr>
+    <td><b>Tim Pengembangan</b></td>
+    <td>Arthur</td>
+    <td>Arthur</td>
+    <td>Arthur</td>
+  </tr>
+</table>
