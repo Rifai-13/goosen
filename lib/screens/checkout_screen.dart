@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'location_screen.dart';
+// Asumsikan file-file screen ini ada di folder yang benar
+import 'location_screen.dart'; 
 import 'payment_screen.dart';
 import 'order_success_screen.dart';
+import 'note_pesanan_screen.dart'; 
+import 'note_delivery_screen.dart';
 
 // ==========================================
 // 1. MODEL DATA
@@ -35,21 +38,21 @@ final List<DeliveryOption> deliveryOptions = [
     title: 'Reguler',
     duration: '25 min - 35 min',
     info: '',
-    price: 13000, // Harga default
+    price: 13000,
   ),
 ];
 
 // Data statis lain
 const String restaurantName = "Katsugi Bento by Kopi Bambang";
 const String deliveryAddress = "Jalan Raya Dadaprejo No .293";
-const int staticPriceItem = 23000; // Harga item tunggal untuk display
+const int staticPriceItem = 23000;
+
 
 // ==========================================
 // 2. CHECKOUT SCREEN (STATEFUL)
 // ==========================================
 class CheckoutScreen extends StatefulWidget {
-  // Menerima subtotal yang dihitung dari halaman sebelumnya
-  final int initialSubtotal;
+  final int initialSubtotal; 
 
   const CheckoutScreen({super.key, required this.initialSubtotal});
 
@@ -59,10 +62,15 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   // Index dari pilihan delivery yang sedang aktif (Default: Reguler index 1)
-  int _selectedDeliveryIndex = 1;
-
+  int _selectedDeliveryIndex = 1; 
+  
   // State untuk menyimpan pilihan pembayaran yang aktif
-  String _currentPaymentMethod = 'Cash Money';
+  String _currentPaymentMethod = 'Cash Money'; 
+  
+  // State untuk menyimpan catatan item menu
+  String _itemNote = '';
+  // State untuk menyimpan catatan pengiriman
+  String _deliveryNote = ''; 
 
   // Data mapping untuk Ikon pembayaran
   final Map<String, IconData> _paymentIcons = {
@@ -70,7 +78,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     'Gopay': Icons.phone_android,
     'Credit Card': Icons.credit_card,
   };
-
+  
   // Variabel untuk menyimpan harga berdasarkan state
   late int _subtotal;
   late int _deliveryFee;
@@ -79,42 +87,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
-    // 1. Inisialisasi Subtotal
     _subtotal = widget.initialSubtotal;
-
-    // 2. Lakukan perhitungan harga awal secara langsung (TANPA setState)
     _calculatePrices(deliveryOptions[_selectedDeliveryIndex].price);
   }
 
   // Helper untuk format mata uang
   String formatCurrency(int amount) {
-    return NumberFormat.currency(
-      locale: 'id',
-      symbol: 'Rp.',
-      decimalDigits: 0,
-    ).format(amount);
+    return NumberFormat.currency(locale: 'id', symbol: 'Rp.', decimalDigits: 0).format(amount);
   }
-
-  // FUNGSI UNTUK MENGHITUNG HARGA AWAL (dipanggil di initState)
+  
+  // FUNGSI UNTUK MENGHITUNG HARGA AWAL (TANPA setState)
   void _calculatePrices(int newDeliveryFee) {
     _deliveryFee = newDeliveryFee;
     _total = _subtotal + _deliveryFee;
   }
 
-  // FUNGSI UNTUK MENGHITUNG HARGA SETELAH STATE BERUBAH (dipanggil di setState)
+  // FUNGSI UNTUK MENGHITUNG HARGA SETELAH STATE BERUBAH (DIPANGGIL DI setState)
   void _updatePricesState(int newDeliveryFee) {
     _deliveryFee = newDeliveryFee;
     _total = _subtotal + _deliveryFee;
   }
 
-  // FUNGSI UNTUK MENGUBAH PILIHAN DELIVERY
   void _selectDelivery(int index) {
     setState(() {
       _selectedDeliveryIndex = index;
       _updatePricesState(deliveryOptions[index].price);
     });
   }
-
+  
   // --- WIDGET CONTAINER PEMBUNGKUS DENGAN SHADOW ---
   Widget _buildCardWrapper({required Widget child, EdgeInsets? padding}) {
     return Container(
@@ -148,80 +148,66 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
       title: const Text(
         restaurantName,
-        style: TextStyle(
-          color: Colors.black,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
       ),
       centerTitle: false,
     );
   }
 
-  // Widget untuk menampilkan opsi delivery yang bisa dipilih
   Widget _buildDeliveryOption(int index, DeliveryOption option) {
     bool isSelected = _selectedDeliveryIndex == index;
 
-    return InkWell(
+    return InkWell( 
       onTap: () => _selectDelivery(index),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      option.title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        option.duration,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green[700],
+            // Expanded pada Column ini memperbaiki isu overflow di layar kecil
+            Expanded( 
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible( // Flexible memastikan Text menyesuaikan diri
+                        child: Text(
+                          option.title,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                if (option.info.isNotEmpty)
-                  Text(
-                    option.info,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          option.duration,
+                          style: TextStyle(fontSize: 12, color: Colors.green[700]),
+                        ),
+                      ),
+                    ],
                   ),
-              ],
+                  if (option.info.isNotEmpty)
+                    Text(
+                      option.info,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                ],
+              ),
             ),
             Row(
               children: [
                 Text(
                   formatCurrency(option.price),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 16),
                 Icon(
-                  isSelected
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_off,
+                  isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
                   color: isSelected ? const Color(0xFF1E9C3C) : Colors.grey,
                 ),
               ],
@@ -232,18 +218,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // Konten Lokasi Pengiriman
   Widget _buildDeliveryLocationContent(BuildContext context) {
+    final String noteButtonLabel = _deliveryNote.isNotEmpty ? 'edit catatan' : 'Catatan';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Delivery location',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.black54,
-          ),
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black54),
         ),
         const SizedBox(height: 8),
         const Text(
@@ -253,23 +236,39 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         const SizedBox(height: 12),
         Row(
           children: [
+            // TOMBOL CATATAN PENGIRIMAN
             ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.edit_note, size: 20, color: Colors.white),
-              label: const Text(
-                'Catatan',
-                style: TextStyle(color: Colors.white),
+              onPressed: () async {
+                final newNote = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => NoteDeliveryScreen(initialNote: _deliveryNote),
+                  ),
+                );
+
+                if (newNote != null && newNote is String) {
+                  setState(() {
+                    _deliveryNote = newNote;
+                  });
+                }
+              },
+              icon: Icon(
+                _deliveryNote.isNotEmpty ? Icons.edit_note : Icons.edit_note, 
+                size: 20, 
+                color: Colors.white
+              ), 
+              label: Text(
+                noteButtonLabel,
+                style: const TextStyle(color: Colors.white)
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E9C3C),
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
             const SizedBox(width: 12),
-            // NAVIGASI KE LOCATION SCREEN
+            // Tombol Change Location
             ElevatedButton.icon(
               onPressed: () {
                 Navigator.push(
@@ -279,31 +278,41 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                 );
               },
-              icon: const Icon(
-                Icons.location_on_outlined,
-                size: 20,
-                color: Colors.white,
-              ),
-              label: const Text(
-                'Change location',
-                style: TextStyle(color: Colors.white),
-              ),
+              icon: const Icon(Icons.location_on_outlined, size: 20, color: Colors.white),
+              label: const Text('Change location', style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E9C3C),
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
           ],
         ),
+        
+        // MENAMPILKAN CATATAN PENGIRIMAN
+        if (_deliveryNote.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 16.0),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _deliveryNote,
+                style: const TextStyle(color: Colors.black87, fontSize: 14),
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  // Konten Ringkasan Item
   Widget _buildItemSummaryContent() {
+    final String itemNoteButtonLabel = _itemNote.isNotEmpty ? 'edit catatan' : 'Catatan';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -329,16 +338,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     style: TextStyle(fontSize: 14, color: Colors.black54),
                   ),
                   const SizedBox(height: 8),
+
+                  // TOMBOL CATATAN MENU ITEM
                   ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.edit_note,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                    label: const Text(
-                      'Catatan',
-                      style: TextStyle(color: Colors.white),
+                    onPressed: () async {
+                      final newNote = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NotePesananScreen(initialNote: _itemNote),
+                        ),
+                      );
+
+                      if (newNote != null && newNote is String) {
+                        setState(() {
+                          _itemNote = newNote;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.edit_note, size: 20, color: Colors.white),
+                    label: Text(
+                      itemNoteButtonLabel,
+                      style: const TextStyle(color: Colors.white),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1E9C3C),
@@ -362,24 +382,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ],
         ),
+        
+        // MENAMPILKAN CATATAN MENU ITEM
+        if (_itemNote.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 16.0),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _itemNote,
+                style: const TextStyle(color: Colors.black87, fontSize: 14),
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  // Item Pembayaran (dengan Navigasi dan Pembaruan Teks)
   Widget _buildPaymentMethodTile(BuildContext context) {
-    IconData currentIcon =
-        _paymentIcons[_currentPaymentMethod] ?? Icons.credit_card_outlined;
+    IconData currentIcon = _paymentIcons[_currentPaymentMethod] ?? Icons.credit_card_outlined;
 
     return InkWell(
       onTap: () async {
-        // NAVIGASI KE PAYMENT SCREEN DAN TUNGGU HASILNYA
         final selectedMethod = await Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const PaymentScreen()),
         );
 
-        // Periksa apakah ada hasil (String) yang dikembalikan dan perbarui state
         if (selectedMethod != null && selectedMethod is String) {
           setState(() {
             _currentPaymentMethod = selectedMethod;
@@ -388,7 +422,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       },
       child: Row(
         children: [
-          // Icon akan sesuai dengan pilihan saat ini
           Icon(currentIcon, color: Colors.green),
           const SizedBox(width: 12),
           const Expanded(
@@ -398,14 +431,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ),
 
-          // TAMPILKAN PILIHAN YANG AKTIF DI KANAN
           Text(
             _currentPaymentMethod,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.green,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green),
           ),
           const SizedBox(width: 8),
           const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
@@ -414,7 +442,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // Konten Rincian Harga
   Widget _buildPriceSummary() {
     return Column(
       children: [
@@ -453,12 +480,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+// ==========================================
+// 3. WIDGET BUILD UTAMA
+// ==========================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-
-      // Bagian bawah (Floating Action Button)
+      backgroundColor: Colors.grey[100], 
+      
+      // BOTTOM NAVIGATION BAR (Button Place Order)
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
@@ -490,68 +520,72 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             child: const Text(
               'Place delivery order',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
         ),
       ),
-
+      
+      // BODY (CustomScrollView)
       body: CustomScrollView(
+        // ClampingScrollPhysics memperbaiki scroll yang tidak perlu di bawah
+        physics: const ClampingScrollPhysics(), 
+
         slivers: [
+          // 1. APP BAR
           _buildCustomAppBar(context),
 
+          // 2. DAFTAR KARTU (SLIVER LIST)
           SliverList(
-            delegate: SliverChildListDelegate([
-              // --- 1. PILIHAN JENIS PENGIRIMAN --- (Card 1)
-              _buildCardWrapper(
-                child: Column(
-                  children: deliveryOptions.asMap().entries.map((entry) {
-                    int index = entry.key;
-                    DeliveryOption option = entry.value;
-                    return Column(
-                      children: [
-                        _buildDeliveryOption(index, option),
-                        if (index < deliveryOptions.length - 1)
-                          const Divider(height: 1, color: Colors.black12),
-                      ],
-                    );
-                  }).toList(),
+            delegate: SliverChildListDelegate(
+              [
+                // CARD 1: Pilihan Pengiriman
+                _buildCardWrapper(
+                  child: Column(
+                    children: deliveryOptions.asMap().entries.map((entry) {
+                      int index = entry.key;
+                      DeliveryOption option = entry.value;
+                      return Column(
+                        children: [
+                          _buildDeliveryOption(index, option),
+                          if (index < deliveryOptions.length - 1)
+                            const Divider(height: 1, color: Colors.black12),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
 
-              // --- 2. LOKASI PENGIRIMAN --- (Card 2)
-              _buildCardWrapper(
-                padding: const EdgeInsets.all(16.0),
-                child: _buildDeliveryLocationContent(context),
-              ),
-
-              // --- 3. DAFTAR ITEM YANG DIPESAN --- (Card 3)
-              _buildCardWrapper(
-                padding: const EdgeInsets.all(16.0),
-                child: _buildItemSummaryContent(),
-              ),
-
-              // --- 4. METODE PEMBAYARAN --- (Card 4)
-              _buildCardWrapper(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 12.0,
+                // CARD 2: Lokasi Pengiriman + Delivery Notes
+                _buildCardWrapper(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _buildDeliveryLocationContent(context),
                 ),
-                child: _buildPaymentMethodTile(context),
-              ),
-
-              // --- 5. RINCIAN HARGA --- (Card 5)
-              _buildCardWrapper(
-                child: _buildPriceSummary(),
-                padding: const EdgeInsets.all(16.0),
-              ),
-
-              const SizedBox(height: 100),
-            ]),
+                
+                // CARD 3: Item Summary + Item Notes
+                _buildCardWrapper(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _buildItemSummaryContent(),
+                ),
+                
+                // CARD 4: Payment Method
+                _buildCardWrapper(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0), 
+                  child: _buildPaymentMethodTile(context),
+                ),
+                
+                // CARD 5: Price Summary
+                _buildCardWrapper(
+                  child: _buildPriceSummary(),
+                  padding: const EdgeInsets.all(16.0),
+                ),
+              ],
+            ),
+          ),
+          
+          // 3. SPACER UNTUK BOTTOM NAVIGATION BAR
+          const SliverToBoxAdapter(
+              child: SizedBox(height: 10), 
           ),
         ],
       ),
