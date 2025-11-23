@@ -39,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
             // --- LOGO SEBAGAI GAMBAR ---
             // Pastikan PATH gambar Anda benar
             Image.asset(
-              'assets/images/logo.png', // <--- UBAH PATH INI SESUAI LOKASI LOGO ANDA
+              'assets/images/logo.png',
               width: 500, // Atur lebar sesuai kebutuhan
               height: 500, // Atur tinggi sesuai kebutuhan
             ),

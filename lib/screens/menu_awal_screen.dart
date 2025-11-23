@@ -25,21 +25,15 @@ class MenuAwalScreen extends StatelessWidget {
                 child: Container(
                   width: double.infinity,
                   height: 250,
-                  color: const Color(0xFFC8E6C9), // Warna hijau muda untuk background
-                  child: Image.network(
-                    'https://raw.githubusercontent.com/flutter/website/main/assets/images/dash/dash-mascot.png', // Placeholder gambar kurir/orang
-                    fit: BoxFit.cover,
-                    loadingBuilder: (ctx, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return const Center(child: CircularProgressIndicator());
-                    },
-                    errorBuilder: (ctx, error, stackTrace) => const Center(
-                      child: Text('Image Placeholder', style: TextStyle(color: Colors.grey)),
+                    color: const Color(0xFFC8E6C9), // Warna hijau muda untuk background
+                    child: Image.asset(
+                      'assets/images/home1.png',
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
               ),
-            ),
+            
 
             const Spacer(flex: 1), 
 
