@@ -1,8 +1,11 @@
 # goosen
 
-A new Flutter project.
+Applikasi untuk melakukan pemesanan makanan.
 
-## Getting Started
+## A - 202210370311261 - MUHAMMAD RIFAI - Rifai-13
+
+## Link Figma
+[Desain UI/UX Goosen](https://www.figma.com/design/a19VT4xajHd6NBKoTyDvKh/Rekayasa-Interaksi?node-id=0-1&t=OL0x8Pp5FPLK0v0A-1)
 
 This project is a starting point for a Flutter application.
 
