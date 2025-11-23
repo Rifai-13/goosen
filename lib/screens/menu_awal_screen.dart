@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 // Asumsi ada file login/register screen
-// import 'login_screen.dart'; 
-// import 'register_screen.dart'; 
+import 'login_screen.dart';
+import 'register_screen.dart'; 
 
 class MenuAwalScreen extends StatelessWidget {
   const MenuAwalScreen({super.key});
@@ -64,6 +64,9 @@ class MenuAwalScreen extends StatelessWidget {
               height: 50,
               child: ElevatedButton(
                 onPressed: () {
+                  Navigator.push(context, 
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  );
                   // Navigasi ke halaman Login
                 },
                 style: ElevatedButton.styleFrom(
@@ -84,6 +87,9 @@ class MenuAwalScreen extends StatelessWidget {
               height: 50,
               child: OutlinedButton(
                 onPressed: () {
+                  Navigator.push(context, 
+                    MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                  );
                   // Navigasi ke halaman Register
                 },
                 style: OutlinedButton.styleFrom(

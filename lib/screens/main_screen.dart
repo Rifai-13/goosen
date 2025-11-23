@@ -12,7 +12,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0; // State untuk tahu tab mana yang aktif
+  int _selectedIndex = 0;
 
   // Daftar halaman/widget yang akan jadi isi dari tiap tab
   static final List<Widget> _pages = <Widget>[
