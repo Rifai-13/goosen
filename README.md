@@ -8,10 +8,10 @@ adalah aplikasi pemesanan makanan berbasis mobile yang dirancang untuk memberika
 [Desain UI/UX Goosen](https://www.figma.com/design/a19VT4xajHd6NBKoTyDvKh/Rekayasa-Interaksi?node-id=0-1&t=OL0x8Pp5FPLK0v0A-1)
 
 ## Worksheet
-[Worksheet](https://drive.google.com/file/d/1ohwvshykGR9RSNboTMSADSerOhaI6_h9/view?usp=sharing)
+[Worksheet](https://drive.google.com/drive/folders/1dDp6gs9-zBixGbyPqX3Dm7czDaZjk4dU?usp=sharing)
 
 ## Low Fidelity Prototype
-[Low Fidelity Prototype](https://drive.google.com/file/d/1KVNqDHfz8uKReINudnictkgTmfd19IBF/view?usp=sharing)
+[Low Fidelity Prototype](https://drive.google.com/drive/folders/10nyKxnJ3cMSgrkr21cyn_sh84PgWLk5d?usp=sharing)
 
 ## Pembagian Tugas
 <table>
