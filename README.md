@@ -7,6 +7,12 @@ adalah aplikasi pemesanan makanan berbasis mobile yang dirancang untuk memberika
 ## Link Figma
 [Desain UI/UX Goosen](https://www.figma.com/design/a19VT4xajHd6NBKoTyDvKh/Rekayasa-Interaksi?node-id=0-1&t=OL0x8Pp5FPLK0v0A-1)
 
+## Worksheet
+[Worksheet](https://drive.google.com/file/d/1CbIVcA6lD9qKaFooozqTSzRNF1k-O8Kv/view?usp=sharing)
+
+## Low Fidelity Prototype
+[Low Fidelity Prototype](https://drive.google.com/file/d/1KVNqDHfz8uKReINudnictkgTmfd19IBF/view?usp=sharing)
+
 ## Pembagian Tugas
 <table>
   <tr>
@@ -41,3 +47,5 @@ adalah aplikasi pemesanan makanan berbasis mobile yang dirancang untuk memberika
     <td>Muhammad Rifai</td>
   </tr>
 </table>
+
+### Catatan: Repository ini merupakan bagian dari tugas mata kuliah dan akan dipantau melalui Insights->Contributors
