@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "92118719428",
+    "project_id": "goosen-1515e",
+    "storage_bucket": "goosen-1515e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:92118719428:android:264bce60a8c2f222af2291",
+        "android_client_info": {
+          "package_name": "com.example.goosen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmy2NKfM3fWy47nccLCHcB1zRGu7RdS5A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
