@@ -1,71 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+// Import Model dan Screen lain
+import '../models/menu_makanan.dart';
 import '../widgets/home_appbar.dart';
 import '../screens/restaurant_menu_screen.dart';
-
-// ==========================================
-// 1. DEFINISI CLASS MODEL & DATA DUMMY
-// ==========================================
-
-class FoodItemData {
-  final String imageUrl;
-  final String name;
-  final String distance;
-  final String time;
-  final double rating;
-  final String ratingCount;
-
-  FoodItemData({
-    required this.imageUrl,
-    required this.name,
-    required this.distance,
-    required this.time,
-    required this.rating,
-    required this.ratingCount,
-  });
-}
-
-final List<FoodItemData> foodItems = [
-  FoodItemData(
-    imageUrl:
-        'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=500&q=80',
-    name: 'Katsugi Bento By Kopi Bambang, La...',
-    distance: '2.49 km',
-    time: '25-35 min',
-    rating: 4.8,
-    ratingCount: '3K',
-  ),
-  FoodItemData(
-    imageUrl:
-        'https://images.unsplash.com/photo-1563636326618-6c8a3528b80e?w=500&q=80',
-    name: 'Nasi Padang Restu Bundo Jl Raya Se...',
-    distance: '1.10 km',
-    time: '15-25 min',
-    rating: 4.8,
-    ratingCount: '100+',
-  ),
-  FoodItemData(
-    imageUrl:
-        'https://images.unsplash.com/photo-1588166524941-efc88e93d264?w=500&q=80',
-    name: 'Steak Wagyu Meltique By The Grill',
-    distance: '5.2 km',
-    time: '30-40 min',
-    rating: 4.6,
-    ratingCount: '500+',
-  ),
-  FoodItemData(
-    imageUrl:
-        'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&q=80',
-    name: 'Healthy Salad Bowl By Veggie Delight',
-    distance: '0.5 km',
-    time: '10-20 min',
-    rating: 4.9,
-    ratingCount: '1.2K',
-  ),
-];
-
-// ==========================================
-// 2. SCREEN UTAMA
-// ==========================================
 
 class AllFoodScreen extends StatefulWidget {
   const AllFoodScreen({super.key});
@@ -76,11 +17,38 @@ class AllFoodScreen extends StatefulWidget {
 
 class _AllFoodScreenState extends State<AllFoodScreen> {
   late final TextEditingController _searchController;
+  
+  // 1. Variabel State untuk Data API
+  List<MenuMakanan> allMenu = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    fetchAllMenu(); // Panggil fungsi fetch saat layar dibuka
+  }
+
+  // 2. Fungsi Ambil Data dari API
+  Future<void> fetchAllMenu() async {
+    try {
+      final String urlAPI = dotenv.env['API_URL'] ?? '';
+      final response = await http.get(Uri.parse(urlAPI));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> dataJSON = json.decode(response.body);
+        setState(() {
+          // Convert JSON ke List<MenuMakanan>
+          allMenu = dataJSON.map((json) => MenuMakanan.fromJson(json)).toList();
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Gagal load data');
+      }
+    } catch (e) {
+      print("Error all food: $e");
+      setState(() => isLoading = false);
+    }
   }
 
   @override
@@ -93,11 +61,9 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // App Bar Reuse
       appBar: HomeAppBar(
         searchController: _searchController,
-        showProfile: false, // Profile Hilang
-        // Tombol X di sebelah kiri Search, Sejajar
+        showProfile: false,
         customLeading: IconButton(
           icon: const Icon(Icons.close, size: 28, color: Colors.black),
           onPressed: () {
@@ -105,52 +71,57 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
           },
         ),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Top-rated by other foodies',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+      // 3. Handle Loading State
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'All Menu Available', // Judul diganti dikit biar keren
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 4. Tampilkan Grid Makanan dari Data API
+                    allMenu.isEmpty
+                        ? const Center(child: Text("Tidak ada menu ditemukan"))
+                        : Wrap(
+                            spacing: 16.0,
+                            runSpacing: 16.0,
+                            children: allMenu.map((item) {
+                              return _buildFoodItem(
+                                context: context,
+                                item: item, // Lempar object MenuMakanan
+                              );
+                            }).toList(),
+                          ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Grid Makanan
-              Wrap(
-                spacing: 16.0,
-                runSpacing: 16.0,
-                children: foodItems.map((item) {
-                  return _buildFoodItem(
-                    context: context,
-                    item: item,
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
+  // 5. Widget Item Makanan (Updated pake Model MenuMakanan)
   Widget _buildFoodItem({
     required BuildContext context,
-    required FoodItemData item,
+    required MenuMakanan item,
   }) {
     final screenWidth = MediaQuery.of(context).size.width;
-    // Rumus lebar card (total lebar - padding kiri kanan - spasi tengah) / 2
+    // Rumus lebar card
     final itemWidth = (screenWidth - 32 - 16) / 2;
 
-return GestureDetector(
+    return GestureDetector(
       onTap: () {
-        // 2. Navigasi ke halaman Detail Menu
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -158,8 +129,7 @@ return GestureDetector(
           ),
         );
       },
-
-child: Container(
+      child: Container(
         width: itemWidth,
         decoration: BoxDecoration(
           color: Colors.white,
@@ -180,14 +150,14 @@ child: Container(
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12.0)),
               child: Image.network(
-                item.imageUrl,
-                height: itemWidth,
+                item.gambar, // Pake data dari API
+                height: itemWidth, // Biar kotak (square)
                 width: double.infinity,
                 fit: BoxFit.cover,
                 errorBuilder: (ctx, error, stack) => Container(
                   height: itemWidth,
                   color: Colors.grey[200],
-                  child: const Icon(Icons.broken_image),
+                  child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
                 ),
               ),
             ),
@@ -198,12 +168,12 @@ child: Container(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${item.distance} • ${item.time}',
+                    '${item.distance} • ${item.duration}', // Data Jarak & Waktu
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    item.name,
+                    item.nama, // Nama Makanan
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.bold),
                     maxLines: 2,
@@ -221,10 +191,17 @@ child: Container(
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '(${item.ratingCount})',
+                        '(${item.terjual})', // Data Terjual/Rating Count
                         style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 6),
+                   // Tambahan Harga biar informatif
+                  Text(
+                    "Rp ${item.harga}",
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600, color: Colors.green),
                   ),
                 ],
               ),
