@@ -1,28 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../models/menu_makanan.dart';
 import '../widgets/my_food_card.dart';
 import '../widgets/home_appbar.dart';
 import '../screens/all_food_screen.dart';
-
-final List<Map<String, dynamic>> dummyFoodData = [
-  {
-    "image":
-        "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80",
-    "distance": "2.49",
-    "duration": "25-35",
-    "title": "Katsugi Bento By Kopi Bambang, La...",
-    "rating": 4.8,
-    "count": "3k",
-  },
-  {
-    "image":
-        "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=500&q=80",
-    "distance": "1.10",
-    "title": "Nasi Padang Restu Bundo Jl Raya Se...",
-    "duration": "15-25",
-    "rating": 4.8,
-    "count": "100",
-  },
-];
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,10 +16,40 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final TextEditingController _searchController;
+
+  // 1. Variabel untuk menampung data API
+  List<MenuMakanan> listTopRated = [];
+  bool isLoading = true;
+
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    fetchTopRatedFoods(); // 2. Panggil fungsi ambil data saat aplikasi dibuka
+  }
+
+  // 3. Fungsi Ambil Data (Sama kayak di AllFoodScreen)
+  Future<void> fetchTopRatedFoods() async {
+    try {
+      final String urlAPI = dotenv.env['API_URL'] ?? '';
+      final response = await http.get(Uri.parse(urlAPI));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> dataJSON = json.decode(response.body);
+        setState(() {
+          // Kita mapping JSON ke Model
+          listTopRated = dataJSON
+              .map((json) => MenuMakanan.fromJson(json))
+              .toList();
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Gagal load data');
+      }
+    } catch (e) {
+      print("Error ambil data home: $e");
+      setState(() => isLoading = false);
+    }
   }
 
   @override
@@ -48,14 +61,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: HomeAppBar(searchController: _searchController, showProfile: true,),
+      appBar: HomeAppBar(
+        searchController: _searchController,
+        showProfile: true,
+      ),
       body: GestureDetector(
         onTap: () {
           FocusScope.of(context).unfocus();
         },
-        // backgroundColor: Colors.white,
         child: SingleChildScrollView(
-          physics: BouncingScrollPhysics(),
+          physics: const BouncingScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -67,22 +82,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
-              // Header Section
+              // Header Section (Banner Gambar)
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.asset(
-                    'assets/images/banner.png',
+                    'assets/images/banner.png', // Pastikan gambar ini ada di assets kamu
                     width: double.infinity,
                     height: 180,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 180,
+                      color: Colors.grey[300],
+                    ), // Placeholder kalau gambar error
                   ),
                 ),
               ),
               const SizedBox(height: 16),
 
+              // Bagian Judul "Top Rated" dan tombol "See All"
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16.0,
@@ -116,29 +136,41 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Top-rated section
+
+              // 4. Bagian List Makanan Horizontal (Top Rated)
               SizedBox(
-                height: 280,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  itemCount: 5,
-                  itemBuilder: (context, index) {
-                    final food = dummyFoodData[index % dummyFoodData.length];
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 16.0),
-                      child: MyFoodCard(
-                        imageUrl: food['image'],
-                        distance: food['distance'],
-                        duration: food['duration'],
-                        title: food['title'],
-                        rating: food['rating'],
-                        ratingCount: food['count'],
+                height: 250,
+                child: isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(),
+                      ) // Loading spinner
+                    : listTopRated.isEmpty
+                    ? const Center(child: Text("Belum ada menu hits nih"))
+                    : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        itemCount: listTopRated.length > 5
+                            ? 5
+                            : listTopRated.length,
+                        itemBuilder: (context, index) {
+                          final food = listTopRated[index];
+
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 16.0),
+                            child: MyFoodCard(
+                              // Data dari API
+                              imageUrl: food.gambar,
+                              title: food.nama,
+                              rating: food.rating,
+                              distance: food.distance,
+                              duration: food.duration,
+                              ratingCount: food.terjual,
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
