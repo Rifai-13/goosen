@@ -6,6 +6,8 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showProfile;
   final VoidCallback? onSearchTap;
   final Widget? customLeading;
+  // 1. TAMBAHKAN INI: Callback saat teks berubah
+  final ValueChanged<String>? onChanged; 
 
   const HomeAppBar({
     Key? key,
@@ -13,6 +15,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showProfile = true,
     this.onSearchTap,
     this.customLeading,
+    this.onChanged, // 2. Masukkan ke constructor
   }) : super(key: key);
 
   @override
@@ -27,6 +30,8 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: TextField(
         controller: searchController,
         onTap: onSearchTap,
+        // 3. PASANG DISINI: Biar screen tau kalau ada ketikan baru
+        onChanged: onChanged, 
         readOnly: onSearchTap != null,
         decoration: InputDecoration(
           hintText: "Cari makanan...",
@@ -47,7 +52,6 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         style: const TextStyle(fontSize: 16),
       ),
 
-      // 3. LOGIC: Cek jika showProfile true, tampilkan icon. Jika false, list kosong.
       actions: showProfile
           ? [
               IconButton(
@@ -62,7 +66,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                 },
               ),
             ]
-          : [SizedBox(width: 16)],
+          : [const SizedBox(width: 16)],
     );
   }
 

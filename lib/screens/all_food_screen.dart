@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-// Import Model dan Screen lain
 import '../models/menu_makanan.dart';
 import '../widgets/home_appbar.dart';
 import '../screens/restaurant_menu_screen.dart';
@@ -18,18 +17,19 @@ class AllFoodScreen extends StatefulWidget {
 class _AllFoodScreenState extends State<AllFoodScreen> {
   late final TextEditingController _searchController;
   
-  // 1. Variabel State untuk Data API
-  List<MenuMakanan> allMenu = [];
+  // 1. KITA BUTUH 2 LIST
+  List<MenuMakanan> _allMenu = []; // Data Master (Copy asli dari API)
+  List<MenuMakanan> _filteredMenu = []; // Data yang TAMPIL di layar
+  
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    fetchAllMenu(); // Panggil fungsi fetch saat layar dibuka
+    fetchAllMenu(); 
   }
 
-  // 2. Fungsi Ambil Data dari API
   Future<void> fetchAllMenu() async {
     try {
       final String urlAPI = dotenv.env['API_URL'] ?? '';
@@ -37,9 +37,13 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
 
       if (response.statusCode == 200) {
         final List<dynamic> dataJSON = json.decode(response.body);
+        
+        // Convert ke List Model
+        final resultList = dataJSON.map((json) => MenuMakanan.fromJson(json)).toList();
+
         setState(() {
-          // Convert JSON ke List<MenuMakanan>
-          allMenu = dataJSON.map((json) => MenuMakanan.fromJson(json)).toList();
+          _allMenu = resultList;     // Simpan ke Master
+          _filteredMenu = resultList; // Awalnya tampilkan semua
           isLoading = false;
         });
       } else {
@@ -49,6 +53,25 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
       print("Error all food: $e");
       setState(() => isLoading = false);
     }
+  }
+
+  // 2. FUNGSI PENCARIAN
+  void _runFilter(String keyword) {
+    List<MenuMakanan> results = [];
+    if (keyword.isEmpty) {
+      // Kalau search kosong, kembalikan ke data master (semua menu)
+      results = _allMenu;
+    } else {
+      // Filter berdasarkan nama (Case Insensitive)
+      results = _allMenu
+          .where((item) => item.nama.toLowerCase().contains(keyword.toLowerCase()))
+          .toList();
+    }
+
+    // Update UI
+    setState(() {
+      _filteredMenu = results;
+    });
   }
 
   @override
@@ -64,6 +87,10 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
       appBar: HomeAppBar(
         searchController: _searchController,
         showProfile: false,
+        
+        // 3. SAMBUNGKAN FUNGSI SEARCH DISINI
+        onChanged: (value) => _runFilter(value),
+        
         customLeading: IconButton(
           icon: const Icon(Icons.close, size: 28, color: Colors.black),
           onPressed: () {
@@ -71,7 +98,6 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
           },
         ),
       ),
-      // 3. Handle Loading State
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -81,9 +107,12 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'All Menu Available', // Judul diganti dikit biar keren
-                      style: TextStyle(
+                     // Menampilkan jumlah hasil pencarian
+                    Text(
+                      _searchController.text.isNotEmpty 
+                          ? 'Found ${_filteredMenu.length} results' 
+                          : 'All Menu Available',
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
@@ -91,16 +120,26 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 4. Tampilkan Grid Makanan dari Data API
-                    allMenu.isEmpty
-                        ? const Center(child: Text("Tidak ada menu ditemukan"))
+                    // 4. GUNAKAN _filteredMenu UNTUK DITAMPILKAN
+                    _filteredMenu.isEmpty
+                        ? Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.only(top: 50),
+                            child: const Column(
+                              children: [
+                                Icon(Icons.search_off, size: 60, color: Colors.grey),
+                                SizedBox(height: 10),
+                                Text("Yah, makanannya nggak ketemu bro :(", style: TextStyle(color: Colors.grey)),
+                              ],
+                            ),
+                          )
                         : Wrap(
                             spacing: 16.0,
                             runSpacing: 16.0,
-                            children: allMenu.map((item) {
+                            children: _filteredMenu.map((item) {
                               return _buildFoodItem(
                                 context: context,
-                                item: item, // Lempar object MenuMakanan
+                                item: item,
                               );
                             }).toList(),
                           ),
@@ -111,13 +150,11 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
     );
   }
 
-  // 5. Widget Item Makanan (Updated pake Model MenuMakanan)
   Widget _buildFoodItem({
     required BuildContext context,
     required MenuMakanan item,
   }) {
     final screenWidth = MediaQuery.of(context).size.width;
-    // Rumus lebar card
     final itemWidth = (screenWidth - 32 - 16) / 2;
 
     return GestureDetector(
@@ -146,12 +183,11 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Gambar
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12.0)),
               child: Image.network(
-                item.gambar, // Pake data dari API
-                height: itemWidth, // Biar kotak (square)
+                item.gambar,
+                height: itemWidth,
                 width: double.infinity,
                 fit: BoxFit.cover,
                 errorBuilder: (ctx, error, stack) => Container(
@@ -161,19 +197,18 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
                 ),
               ),
             ),
-            // Info Teks
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${item.distance} • ${item.duration}', // Data Jarak & Waktu
+                    '${item.distance} • ${item.duration}',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    item.nama, // Nama Makanan
+                    item.nama,
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.bold),
                     maxLines: 2,
@@ -191,13 +226,12 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '(${item.terjual})', // Data Terjual/Rating Count
+                        '(${item.terjual})',
                         style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                   // Tambahan Harga biar informatif
+                   const SizedBox(height: 6),
                   Text(
                     "Rp ${item.harga}",
                     style: const TextStyle(
