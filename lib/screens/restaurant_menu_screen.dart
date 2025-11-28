@@ -1,30 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../models/menu_makanan.dart'; // IMPORT MODEL KAMU DISINI
+import '../models/menu_makanan.dart';
 import 'checkout_screen.dart';
-
-// ==========================================
-// 1. MODEL DATA LOKAL (Untuk Handle Quantity)
-// ==========================================
-class MenuItem {
-  final String title;
-  final String desc;
-  final int price;
-  final double rating;
-  final String reviewCount;
-  final String imageUrl;
-  int quantity;
-
-  MenuItem({
-    required this.title,
-    required this.desc,
-    required this.price,
-    required this.rating,
-    required this.reviewCount,
-    required this.imageUrl,
-    this.quantity = 0,
-  });
-}
+import '../models/menu_item.dart';
 
 // ==========================================
 // 2. WIDGET DASHED LINE
@@ -170,11 +148,12 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
               borderRadius: BorderRadius.circular(30),
               onTap: () {
                 if (totalItems > 0) {
+                  final List<MenuItem> cartItems = _menuItems.where((item) => item.quantity > 0).toList();
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
-                          CheckoutScreen(initialSubtotal: totalPrice),
+                          CheckoutScreen(initialSubtotal: totalPrice, cartItems: cartItems, orderTitle: widget.selectedMenu.nama,),
                     ),
                   );
                 }
