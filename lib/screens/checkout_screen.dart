@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../models/menu_item.dart'; // Pastikan path ini benar
+// IMPORT FIREBASE
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../models/menu_item.dart'; // Pastikan path model benar
 
 // File screen lain
 import 'location_screen.dart';
@@ -63,10 +67,14 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   int _selectedDeliveryIndex = 1;
   String _currentPaymentMethod = 'Cash Money';
+  
+  // Note untuk Makanan (Sementara di memory)
   String _itemNote = '';
-  String _deliveryNote = '';
+  
+  // Note untuk Pengiriman (Delivery Location)
+  String _deliveryNote = ''; 
 
-  // 1. UBAH DISINI: Default kosong (biar user wajib pilih)
+  // Alamat Default Kosong (Wajib pilih)
   String _deliveryAddress = ""; 
 
   final Map<String, IconData> _paymentIcons = {
@@ -228,13 +236,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // --- BAGIAN LOKASI YANG DIPERBAIKI ---
   Widget _buildDeliveryLocationContent(BuildContext context) {
     final String noteButtonLabel = _deliveryNote.isNotEmpty
         ? 'edit catatan'
         : 'Catatan';
     
-    // Cek apakah alamat kosong
     bool isAddressEmpty = _deliveryAddress.isEmpty;
 
     return Column(
@@ -249,18 +255,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        
-        // 2. LOGIKA TAMPILAN ALAMAT
         Text(
           isAddressEmpty ? "Alamat belum di-setting" : _deliveryAddress,
           style: TextStyle(
-            fontSize: 16, 
+            fontSize: 16,
             fontWeight: FontWeight.bold,
-            // Kalau kosong warnanya merah biar kelihatan warning
-            color: isAddressEmpty ? Colors.red : Colors.black
+            color: isAddressEmpty ? Colors.red : Colors.black,
           ),
         ),
-        
         const SizedBox(height: 12),
         Row(
           children: [
@@ -303,7 +305,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 final selectedLocation = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    // Jangan kirim currentAddress kalau masih kosong
                     builder: (context) => LocationScreen(
                       currentAddress: isAddressEmpty ? null : _deliveryAddress,
                     ),
@@ -322,7 +323,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 color: Colors.white,
               ),
               label: Text(
-                // Ganti teks tombol kalau kosong jadi "Pilih Lokasi"
                 isAddressEmpty ? 'Pilih Lokasi' : 'Change location',
                 style: const TextStyle(color: Colors.white),
               ),
@@ -347,7 +347,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                _deliveryNote,
+                "Note: $_deliveryNote",
                 style: const TextStyle(color: Colors.black87, fontSize: 14),
               ),
             ),
@@ -425,6 +425,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           );
         }).toList(),
         const Divider(height: 24),
+        
         ElevatedButton.icon(
           onPressed: () async {
             final newNote = await Navigator.push(
@@ -464,7 +465,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                _itemNote,
+                "Order Note: $_itemNote",
                 style: const TextStyle(color: Colors.black87, fontSize: 14),
               ),
             ),
@@ -555,7 +556,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Cek apakah alamat kosong untuk styling tombol bawah
     bool isAddressEmpty = _deliveryAddress.isEmpty;
 
     return Scaffold(
@@ -575,10 +575,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         child: SizedBox(
           height: 50,
           child: ElevatedButton(
-            // 3. LOGIKA VALIDASI TOMBOL ORDER
-            onPressed: () {
+            // ==========================================
+            // LOGIKA FIREBASE PLACE ORDER DI SINI
+            // ==========================================
+            onPressed: () async {
+              // 1. Validasi Alamat Wajib Dipilih
               if (isAddressEmpty) {
-                // Tampilkan Peringatan kalau alamat kosong
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text("Harap pilih alamat pengiriman terlebih dahulu!"),
@@ -586,18 +588,74 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
-              } else {
-                // Kalau aman, baru pindah ke sukses
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const OrderSuccessScreen(),
-                  ),
+                return; // Stop eksekusi
+              }
+
+              // 2. Tampilkan Loading Sederhana
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Sedang memproses pesanan...")),
+              );
+
+              try {
+                // 3. Ambil User Login Saat Ini
+                User? user = FirebaseAuth.instance.currentUser;
+                if (user == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("User tidak terdeteksi. Silakan login.")),
+                  );
+                  return;
+                }
+
+                // 4. SUSUN DATA UNTUK DIKIRIM KE FIREBASE 'orders'
+                // Ini akan menggabungkan semua data dari halaman ini
+                await FirebaseFirestore.instance.collection('orders').add({
+                  'userId': user.uid,
+                  'createdAt': FieldValue.serverTimestamp(), // Waktu server
+                  'status': 'pending', // Status awal
+                  
+                  // -- Info Harga --
+                  'subtotal': _subtotal,
+                  'deliveryFee': _deliveryFee,
+                  'totalPrice': _total,
+                  'paymentMethod': _currentPaymentMethod,
+
+                  // -- Info Pengiriman --
+                  'deliveryOption': deliveryOptions[_selectedDeliveryIndex].title, // Express/Reguler
+                  'deliveryAddress': _deliveryAddress,
+                  'deliveryNote': _deliveryNote, // Note Alamat (Permanen/Firebase User)
+
+                  // -- Info Makanan & Note Makanan --
+                  'orderNote': _itemNote, // <--- NOTE MAKANAN MASUK SINI
+                  
+                  // -- Daftar Barang yang Dibeli (Array) --
+                  'items': widget.cartItems.map((item) {
+                    return {
+                      'title': item.title,
+                      'price': item.price,
+                      'quantity': item.quantity,
+                      'image': item.imageUrl,
+                    };
+                  }).toList(),
+                });
+
+                // 5. SUKSES! Pindah ke layar sukses dan hapus stack sebelumnya
+                if (context.mounted) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const OrderSuccessScreen(),
+                    ),
+                  );
+                }
+
+              } catch (e) {
+                // Kalau Error (misal internet mati)
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Gagal membuat pesanan: $e")),
                 );
               }
             },
             style: ElevatedButton.styleFrom(
-              // Ubah warna jadi abu-abu kalau belum pilih alamat (Optional UX)
               backgroundColor: isAddressEmpty ? Colors.grey : const Color(0xFF1E9C3C),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
