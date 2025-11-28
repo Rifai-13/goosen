@@ -69,8 +69,9 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _isSearching = true;
         _searchResults = listTopRated
-            .where((item) =>
-                item.nama.toLowerCase().contains(keyword.toLowerCase()))
+            .where(
+              (item) => item.nama.toLowerCase().contains(keyword.toLowerCase()),
+            )
             .toList();
       });
     }
@@ -103,8 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : _isSearching
-                ? _buildSearchResults() // Tampilan Mode Cari
-                : _buildNormalContent(), // Tampilan Mode Normal
+            ? _buildSearchResults() // Tampilan Mode Cari
+            : _buildNormalContent(), // Tampilan Mode Normal
       ),
     );
   }
@@ -134,10 +135,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: double.infinity,
                 height: 180,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  height: 180,
-                  color: Colors.grey[300],
-                ),
+                errorBuilder: (context, error, stackTrace) =>
+                    Container(height: 180, color: Colors.grey[300]),
               ),
             ),
           ),
@@ -152,10 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const Text(
                   'Top Rated',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 TextButton(
                   onPressed: () {
@@ -176,24 +172,43 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: 255, // Ukuran disesuaikan
+            height: 255,
             child: listTopRated.isEmpty
                 ? const Center(child: Text("Belum ada menu hits nih"))
                 : ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    itemCount: listTopRated.length > 5 ? 5 : listTopRated.length,
+                    itemCount: listTopRated.length > 5
+                        ? 5
+                        : listTopRated.length,
                     itemBuilder: (context, index) {
                       final food = listTopRated[index];
+
                       return Padding(
                         padding: const EdgeInsets.only(right: 16.0),
-                        child: MyFoodCard(
-                          imageUrl: food.gambar,
-                          title: food.nama,
-                          rating: food.rating,
-                          distance: food.distance,
-                          duration: food.duration,
-                          ratingCount: food.terjual,
+                        // 1. BUNGKUS DENGAN GESTURE DETECTOR
+                        child: GestureDetector(
+                          onTap: () {
+                            // 2. NAVIGASI KE RESTAURANT MENU
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RestaurantMenuScreen(
+                                  selectedMenu:
+                                      food, // Kirim data makanan yang diklik
+                                ),
+                              ),
+                            );
+                          },
+                          // 3. Child-nya tetap Card Makanan kamu
+                          child: MyFoodCard(
+                            imageUrl: food.gambar,
+                            title: food.nama,
+                            rating: food.rating,
+                            distance: food.distance,
+                            duration: food.duration,
+                            ratingCount: food.terjual,
+                          ),
                         ),
                       );
                     },
@@ -232,11 +247,10 @@ class _HomeScreenState extends State<HomeScreen> {
         return ListTile(
           contentPadding: EdgeInsets.zero,
           onTap: () {
-            // Navigasi ke detail kalau diklik
-             Navigator.push(
+            Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const RestaurantMenuScreen(),
+                builder: (context) => RestaurantMenuScreen(selectedMenu: food),
               ),
             );
           },
@@ -258,7 +272,10 @@ class _HomeScreenState extends State<HomeScreen> {
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Rp ${food.harga}", style: const TextStyle(color: Colors.green)),
+              Text(
+                "Rp ${food.harga}",
+                style: const TextStyle(color: Colors.green),
+              ),
               Row(
                 children: [
                   const Icon(Icons.star, size: 14, color: Colors.amber),
@@ -267,7 +284,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          trailing: const Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: Colors.grey,
+          ),
         );
       },
     );

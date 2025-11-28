@@ -162,7 +162,8 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const RestaurantMenuScreen(),
+            builder: (context) => RestaurantMenuScreen(selectedMenu: item),
+            
           ),
         );
       },
