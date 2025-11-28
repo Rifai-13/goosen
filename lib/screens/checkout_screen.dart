@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../models/menu_item.dart'; // Import model MenuItem
+import '../models/menu_item.dart'; // Pastikan path ini benar
 
-// File screen lain (sesuaikan path)
+// File screen lain
 import 'location_screen.dart';
 import 'payment_screen.dart';
 import 'order_success_screen.dart';
@@ -41,17 +41,13 @@ final List<DeliveryOption> deliveryOptions = [
   ),
 ];
 
-const String deliveryAddress = "Jalan Raya Dadaprejo No .293";
-
 // ==========================================
 // 2. CHECKOUT SCREEN (STATEFUL)
 // ==========================================
 class CheckoutScreen extends StatefulWidget {
   final int initialSubtotal;
-
-  // DATA DINAMIS DARI RESTAURANT MENU
   final List<MenuItem> cartItems;
-  final String orderTitle; // Buat ganti judul AppBar
+  final String orderTitle;
 
   const CheckoutScreen({
     super.key,
@@ -69,6 +65,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String _currentPaymentMethod = 'Cash Money';
   String _itemNote = '';
   String _deliveryNote = '';
+
+  // 1. UBAH DISINI: Default kosong (biar user wajib pilih)
+  String _deliveryAddress = ""; 
 
   final Map<String, IconData> _paymentIcons = {
     'Cash Money': Icons.money,
@@ -131,7 +130,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // --- APP BAR (JUDUL SESUAI MAKANAN) ---
   SliverAppBar _buildCustomAppBar(BuildContext context) {
     return SliverAppBar(
       pinned: true,
@@ -142,7 +140,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
-        widget.orderTitle, // <--- INI SUDAH DINAMIS SESUAI MAKANAN
+        widget.orderTitle,
         style: const TextStyle(
           color: Colors.black,
           fontSize: 16,
@@ -230,10 +228,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  // --- BAGIAN LOKASI YANG DIPERBAIKI ---
   Widget _buildDeliveryLocationContent(BuildContext context) {
     final String noteButtonLabel = _deliveryNote.isNotEmpty
         ? 'edit catatan'
         : 'Catatan';
+    
+    // Cek apakah alamat kosong
+    bool isAddressEmpty = _deliveryAddress.isEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,10 +249,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
-          deliveryAddress,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        
+        // 2. LOGIKA TAMPILAN ALAMAT
+        Text(
+          isAddressEmpty ? "Alamat belum di-setting" : _deliveryAddress,
+          style: TextStyle(
+            fontSize: 16, 
+            fontWeight: FontWeight.bold,
+            // Kalau kosong warnanya merah biar kelihatan warning
+            color: isAddressEmpty ? Colors.red : Colors.black
+          ),
         ),
+        
         const SizedBox(height: 12),
         Row(
           children: [
@@ -289,25 +299,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(width: 12),
             ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                final selectedLocation = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const LocationScreen(),
+                    // Jangan kirim currentAddress kalau masih kosong
+                    builder: (context) => LocationScreen(
+                      currentAddress: isAddressEmpty ? null : _deliveryAddress,
+                    ),
                   ),
                 );
+
+                if (selectedLocation != null && selectedLocation is String) {
+                  setState(() {
+                    _deliveryAddress = selectedLocation;
+                  });
+                }
               },
               icon: const Icon(
                 Icons.location_on_outlined,
                 size: 20,
                 color: Colors.white,
               ),
-              label: const Text(
-                'Change location',
-                style: TextStyle(color: Colors.white),
+              label: Text(
+                // Ganti teks tombol kalau kosong jadi "Pilih Lokasi"
+                isAddressEmpty ? 'Pilih Lokasi' : 'Change location',
+                style: const TextStyle(color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E9C3C),
+                backgroundColor: isAddressEmpty ? Colors.red : const Color(0xFF1E9C3C),
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -336,7 +356,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // --- ITEM SUMMARY (BAGIAN INI YANG JADI DINAMIS TAPI TAMPILAN TETAP SAMA) ---
   Widget _buildItemSummaryContent() {
     final String itemNoteButtonLabel = _itemNote.isNotEmpty
         ? 'edit catatan'
@@ -345,69 +364,67 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // LOOPING CART ITEMS (GANTIKAN DATA DUMMY)
         ...widget.cartItems.map((item) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0), // Spasi antar item
-            child: Column(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.title, // NAMA MAKANAN
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    item.imageUrl,
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                    errorBuilder: (ctx, err, stack) => Container(
+                      width: 60,
+                      height: 60,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            formatCurrency(item.price), // HARGA
+                            formatCurrency(item.price),
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.black,
                             ),
                           ),
                           Text(
-                            'item : ${item.quantity}', // JUMLAH
+                            'Item : ${item.quantity}',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.black54,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        item.imageUrl,
-                        width: 120,
-                        height: 80,
-                        fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, stack) => Container(
-                          width: 60,
-                          height: 60,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           );
         }).toList(),
-
-        // const SizedBox(height: 8),
-
+        const Divider(height: 24),
         ElevatedButton.icon(
           onPressed: () async {
             final newNote = await Navigator.push(
@@ -436,7 +453,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ),
         ),
-
         if (_itemNote.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 16.0),
@@ -484,7 +500,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
-
           Text(
             _currentPaymentMethod,
             style: const TextStyle(
@@ -540,9 +555,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Cek apakah alamat kosong untuk styling tombol bawah
+    bool isAddressEmpty = _deliveryAddress.isEmpty;
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
-
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
@@ -558,16 +575,30 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         child: SizedBox(
           height: 50,
           child: ElevatedButton(
+            // 3. LOGIKA VALIDASI TOMBOL ORDER
             onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const OrderSuccessScreen(),
-                ),
-              );
+              if (isAddressEmpty) {
+                // Tampilkan Peringatan kalau alamat kosong
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Harap pilih alamat pengiriman terlebih dahulu!"),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              } else {
+                // Kalau aman, baru pindah ke sukses
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const OrderSuccessScreen(),
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E9C3C),
+              // Ubah warna jadi abu-abu kalau belum pilih alamat (Optional UX)
+              backgroundColor: isAddressEmpty ? Colors.grey : const Color(0xFF1E9C3C),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -583,7 +614,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
       ),
-
       body: CustomScrollView(
         physics: const ClampingScrollPhysics(),
         slivers: [
@@ -605,18 +635,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   }).toList(),
                 ),
               ),
-
               _buildCardWrapper(
                 padding: const EdgeInsets.all(16.0),
                 child: _buildDeliveryLocationContent(context),
               ),
-
-              // INI ISI SUMMARY MAKANAN YANG DINAMIS
               _buildCardWrapper(
                 padding: const EdgeInsets.all(16.0),
                 child: _buildItemSummaryContent(),
               ),
-
               _buildCardWrapper(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16.0,
@@ -624,7 +650,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
                 child: _buildPaymentMethodTile(context),
               ),
-
               _buildCardWrapper(
                 child: _buildPriceSummary(),
                 padding: const EdgeInsets.all(16.0),
