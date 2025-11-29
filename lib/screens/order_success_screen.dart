@@ -1,5 +1,4 @@
 // order_success_screen.dart
-
 import 'package:flutter/material.dart';
 import 'main_screen.dart';
 
@@ -59,15 +58,14 @@ class OrderSuccessScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     // MENGGANTI LAYAR SAAT INI DENGAN ActivityScreen
-                    // Penggunaan pushReplacement memastikan layar Checkout dan Success dihapus dari stack.
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const MainScreen(
                           initialIndex: 1,
-                        ), // Buka tab Activity
+                        ),
                       ),
-                      (route) => false, // Hapus semua rute di belakangnya
+                      (route) => false,
                     );
                   },
                   style: ElevatedButton.styleFrom(

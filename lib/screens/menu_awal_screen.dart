@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// Asumsi ada file login/register screen
 import 'login_screen.dart';
 import 'register_screen.dart'; 
 
@@ -25,7 +24,7 @@ class MenuAwalScreen extends StatelessWidget {
                 child: Container(
                   width: double.infinity,
                   height: 250,
-                    color: const Color(0xFFC8E6C9), // Warna hijau muda untuk background
+                    color: const Color(0xFFC8E6C9),
                     child: Image.asset(
                       'assets/images/home1.png',
                       fit: BoxFit.cover,

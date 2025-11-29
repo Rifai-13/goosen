@@ -1,71 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+import '../models/menu_makanan.dart';
 import '../widgets/home_appbar.dart';
 import '../screens/restaurant_menu_screen.dart';
-
-// ==========================================
-// 1. DEFINISI CLASS MODEL & DATA DUMMY
-// ==========================================
-
-class FoodItemData {
-  final String imageUrl;
-  final String name;
-  final String distance;
-  final String time;
-  final double rating;
-  final String ratingCount;
-
-  FoodItemData({
-    required this.imageUrl,
-    required this.name,
-    required this.distance,
-    required this.time,
-    required this.rating,
-    required this.ratingCount,
-  });
-}
-
-final List<FoodItemData> foodItems = [
-  FoodItemData(
-    imageUrl:
-        'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=500&q=80',
-    name: 'Katsugi Bento By Kopi Bambang, La...',
-    distance: '2.49 km',
-    time: '25-35 min',
-    rating: 4.8,
-    ratingCount: '3K',
-  ),
-  FoodItemData(
-    imageUrl:
-        'https://images.unsplash.com/photo-1563636326618-6c8a3528b80e?w=500&q=80',
-    name: 'Nasi Padang Restu Bundo Jl Raya Se...',
-    distance: '1.10 km',
-    time: '15-25 min',
-    rating: 4.8,
-    ratingCount: '100+',
-  ),
-  FoodItemData(
-    imageUrl:
-        'https://images.unsplash.com/photo-1588166524941-efc88e93d264?w=500&q=80',
-    name: 'Steak Wagyu Meltique By The Grill',
-    distance: '5.2 km',
-    time: '30-40 min',
-    rating: 4.6,
-    ratingCount: '500+',
-  ),
-  FoodItemData(
-    imageUrl:
-        'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&q=80',
-    name: 'Healthy Salad Bowl By Veggie Delight',
-    distance: '0.5 km',
-    time: '10-20 min',
-    rating: 4.9,
-    ratingCount: '1.2K',
-  ),
-];
-
-// ==========================================
-// 2. SCREEN UTAMA
-// ==========================================
 
 class AllFoodScreen extends StatefulWidget {
   const AllFoodScreen({super.key});
@@ -76,11 +16,62 @@ class AllFoodScreen extends StatefulWidget {
 
 class _AllFoodScreenState extends State<AllFoodScreen> {
   late final TextEditingController _searchController;
+  
+  // 1. KITA BUTUH 2 LIST
+  List<MenuMakanan> _allMenu = [];
+  List<MenuMakanan> _filteredMenu = [];
+  
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    fetchAllMenu(); 
+  }
+
+  Future<void> fetchAllMenu() async {
+    try {
+      final String urlAPI = dotenv.env['API_URL'] ?? '';
+      final response = await http.get(Uri.parse(urlAPI));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> dataJSON = json.decode(response.body);
+        
+        // Convert ke List Model
+        final resultList = dataJSON.map((json) => MenuMakanan.fromJson(json)).toList();
+
+        setState(() {
+          _allMenu = resultList;
+          _filteredMenu = resultList;
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Gagal load data');
+      }
+    } catch (e) {
+      print("Error all food: $e");
+      setState(() => isLoading = false);
+    }
+  }
+
+  // 2. FUNGSI PENCARIAN
+  void _runFilter(String keyword) {
+    List<MenuMakanan> results = [];
+    if (keyword.isEmpty) {
+      // Kalau search kosong, kembalikan ke data master (semua menu)
+      results = _allMenu;
+    } else {
+      // Filter berdasarkan nama (Case Insensitive)
+      results = _allMenu
+          .where((item) => item.nama.toLowerCase().contains(keyword.toLowerCase()))
+          .toList();
+    }
+
+    // Update UI
+    setState(() {
+      _filteredMenu = results;
+    });
   }
 
   @override
@@ -93,11 +84,13 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // App Bar Reuse
       appBar: HomeAppBar(
         searchController: _searchController,
-        showProfile: false, // Profile Hilang
-        // Tombol X di sebelah kiri Search, Sejajar
+        showProfile: false,
+        
+        // 3. SAMBUNGKAN FUNGSI SEARCH DISINI
+        onChanged: (value) => _runFilter(value),
+        
         customLeading: IconButton(
           icon: const Icon(Icons.close, size: 28, color: Colors.black),
           onPressed: () {
@@ -105,61 +98,76 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
           },
         ),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Top-rated by other foodies',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                     // Menampilkan jumlah hasil pencarian
+                    Text(
+                      _searchController.text.isNotEmpty 
+                          ? 'Found ${_filteredMenu.length} results' 
+                          : 'All Menu Available',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 4. GUNAKAN _filteredMenu UNTUK DITAMPILKAN
+                    _filteredMenu.isEmpty
+                        ? Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.only(top: 50),
+                            child: const Column(
+                              children: [
+                                Icon(Icons.search_off, size: 60, color: Colors.grey),
+                                SizedBox(height: 10),
+                                Text("Yah, makanannya nggak ketemu bro :(", style: TextStyle(color: Colors.grey)),
+                              ],
+                            ),
+                          )
+                        : Wrap(
+                            spacing: 16.0,
+                            runSpacing: 16.0,
+                            children: _filteredMenu.map((item) {
+                              return _buildFoodItem(
+                                context: context,
+                                item: item,
+                              );
+                            }).toList(),
+                          ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Grid Makanan
-              Wrap(
-                spacing: 16.0,
-                runSpacing: 16.0,
-                children: foodItems.map((item) {
-                  return _buildFoodItem(
-                    context: context,
-                    item: item,
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
   Widget _buildFoodItem({
     required BuildContext context,
-    required FoodItemData item,
+    required MenuMakanan item,
   }) {
     final screenWidth = MediaQuery.of(context).size.width;
-    // Rumus lebar card (total lebar - padding kiri kanan - spasi tengah) / 2
     final itemWidth = (screenWidth - 32 - 16) / 2;
 
-return GestureDetector(
+    return GestureDetector(
       onTap: () {
-        // 2. Navigasi ke halaman Detail Menu
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const RestaurantMenuScreen(),
+            builder: (context) => RestaurantMenuScreen(selectedMenu: item),
+            
           ),
         );
       },
-
-child: Container(
+      child: Container(
         width: itemWidth,
         decoration: BoxDecoration(
           color: Colors.white,
@@ -176,34 +184,32 @@ child: Container(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Gambar
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12.0)),
               child: Image.network(
-                item.imageUrl,
+                item.gambar,
                 height: itemWidth,
                 width: double.infinity,
                 fit: BoxFit.cover,
                 errorBuilder: (ctx, error, stack) => Container(
                   height: itemWidth,
                   color: Colors.grey[200],
-                  child: const Icon(Icons.broken_image),
+                  child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
                 ),
               ),
             ),
-            // Info Teks
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${item.distance} • ${item.time}',
+                    '${item.distance} • ${item.duration}',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    item.name,
+                    item.nama,
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.bold),
                     maxLines: 2,
@@ -221,10 +227,16 @@ child: Container(
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '(${item.ratingCount})',
+                        '(${item.terjual})',
                         style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Rp ${item.harga}",
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600, color: Colors.green),
                   ),
                 ],
               ),

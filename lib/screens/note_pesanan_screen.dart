@@ -1,5 +1,3 @@
-// note_pesanan_screen.dart
-
 import 'package:flutter/material.dart';
 
 class NotePesananScreen extends StatefulWidget {
@@ -17,14 +15,13 @@ class NotePesananScreen extends StatefulWidget {
 class _NotePesananScreenState extends State<NotePesananScreen> {
   late TextEditingController _controller;
   final int _maxLength = 200;
-  final FocusNode _focusNode = FocusNode(); // Untuk melacak fokus input
+  final FocusNode _focusNode = FocusNode();
 
-  // Fungsi untuk menyimpan catatan dan kembali
+  // Cukup kembalikan teks ke layar sebelumnya
   void _saveNote() {
     Navigator.pop(context, _controller.text);
   }
   
-  // Fungsi untuk membersihkan catatan
   void _clearNote() {
     setState(() {
       _controller.clear();
@@ -36,8 +33,6 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialNote);
-    
-    // Tambahkan listener untuk memaksa rebuild saat fokus berubah
     _focusNode.addListener(() {
       setState(() {});
     });
@@ -52,9 +47,7 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Tentukan apakah tombol Save harus aktif (hijau)
     final bool isSaveActive = _controller.text.isNotEmpty;
-    // Tentukan apakah placeholder contoh harus ditampilkan
     final bool showExamplePlaceholder = _controller.text.isEmpty && !_focusNode.hasFocus;
 
     return Scaffold(
@@ -72,7 +65,6 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
         ),
         centerTitle: false,
         actions: [
-          // Tombol Clear hanya muncul jika sudah ada teks
           if (widget.initialNote.isNotEmpty || _controller.text.isNotEmpty)
             TextButton(
               onPressed: _clearNote,
@@ -86,38 +78,29 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            
-            // --- 1. KONTEN UTAMA (TextField dan Placeholder Contoh) ---
             Expanded(
-              child: Stack( // Gunakan Stack untuk menempatkan placeholder di belakang TextField
+              child: Stack(
                 alignment: Alignment.topLeft,
                 children: [
-                  
-                  // A. Placeholder Contoh (Hanya muncul jika kondisi terpenuhi)
                   if (showExamplePlaceholder)
-                    // Container yang memberikan efek "Shadow" seperti di gambar
                     GestureDetector(
                       onTap: () {
-                        // Jika diklik, fokuskan ke TextField agar keyboard muncul
                         _focusNode.requestFocus();
                       },
                       child: Container(
-                        padding: const EdgeInsets.only(top: 0), // Sesuaikan dengan padding TextField
+                        padding: const EdgeInsets.only(top: 0),
                         child: const Text(
                           'Example: Make my food spicy!',
                           style: TextStyle(fontSize: 16, color: Colors.grey),
                         ),
                       ),
                     ),
-
-                  // B. TextField Catatan
                   TextField(
                     controller: _controller,
                     focusNode: _focusNode,
                     maxLines: null,
                     maxLength: _maxLength,
                     expands: true,
-                    // Tambahkan listener untuk mengubah warna tombol secara real-time
                     onChanged: (text) {
                       setState(() {});
                     },
@@ -125,7 +108,6 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
                       counterText: '',
-                      // Gunakan hintText kosong karena kita menggunakan placeholder custom
                       hintText: showExamplePlaceholder ? '' : null, 
                     ),
                     style: const TextStyle(fontSize: 16),
@@ -134,11 +116,9 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
               ),
             ),
             
-            // --- 2. Bagian Bawah: Counter dan Tombol Save ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Counter Karakter
                 ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _controller,
                   builder: (context, value, child) {
@@ -149,11 +129,9 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
                   },
                 ),
                 
-                // Tombol Save
                 TextButton(
-                  onPressed: isSaveActive ? _saveNote : null, // Tombol tidak bisa diklik jika teks kosong
+                  onPressed: isSaveActive ? _saveNote : null,
                   style: TextButton.styleFrom(
-                    // WARNA TOMBOL BERUBAH BERDASARKAN isSaveActive
                     backgroundColor: isSaveActive ? const Color(0xFF1E9C3C) : Colors.grey[300],
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
@@ -163,7 +141,6 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
                   child: Text(
                     'Save',
                     style: TextStyle(
-                      // WARNA TEKS BERUBAH
                       color: isSaveActive ? Colors.white : Colors.black54, 
                       fontWeight: FontWeight.bold
                     ),

@@ -1,9 +1,8 @@
-// note_delivery_screen.dart
-
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NoteDeliveryScreen extends StatefulWidget {
-  // Menerima catatan pengiriman yang sudah ada
   final String initialNote;
 
   const NoteDeliveryScreen({
@@ -18,28 +17,15 @@ class NoteDeliveryScreen extends StatefulWidget {
 class _NoteDeliveryScreenState extends State<NoteDeliveryScreen> {
   late TextEditingController _controller;
   final int _maxLength = 200;
-  final FocusNode _focusNode = FocusNode(); 
-
-  // Fungsi untuk menyimpan catatan dan kembali
-  void _saveNote() {
-    // Mengembalikan teks yang diketik ke halaman sebelumnya
-    Navigator.pop(context, _controller.text);
-  }
+  final FocusNode _focusNode = FocusNode();
   
-  // Fungsi untuk membersihkan catatan
-  void _clearNote() {
-    setState(() {
-      _controller.clear();
-      Navigator.pop(context, ''); // Mengembalikan string kosong
-    });
-  }
+  // Ambil user saat ini
+  final User? user = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialNote);
-    
-    // Tambahkan listener untuk memaksa rebuild saat fokus/teks berubah
     _focusNode.addListener(() {
       setState(() {});
     });
@@ -50,6 +36,37 @@ class _NoteDeliveryScreenState extends State<NoteDeliveryScreen> {
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  // --- FUNGSI SIMPAN KE FIREBASE & KEMBALI ---
+  Future<void> _saveNote() async {
+    final String noteText = _controller.text;
+
+    // 1. Simpan ke Firebase (Opsional: Simpan sebagai preferensi user)
+    if (user != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uid)
+            .set({
+          'last_delivery_note': noteText,
+        }, SetOptions(merge: true));
+      } catch (e) {
+        debugPrint("Gagal simpan note ke Firebase: $e");
+      }
+    }
+
+    // 2. Kembali ke CheckoutScreen membawa data teks
+    if (mounted) {
+      Navigator.pop(context, noteText);
+    }
+  }
+
+  void _clearNote() {
+    setState(() {
+      _controller.clear();
+      Navigator.pop(context, '');
+    });
   }
 
   @override
@@ -67,7 +84,7 @@ class _NoteDeliveryScreenState extends State<NoteDeliveryScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Delivery notes', // <--- JUDUL BERBEDA
+          'Delivery notes',
           style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
@@ -79,86 +96,62 @@ class _NoteDeliveryScreenState extends State<NoteDeliveryScreen> {
             ),
         ],
       ),
-      
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            
-            // --- 1. KONTEN UTAMA (TextField dan Placeholder Contoh) ---
             Expanded(
-              child: Stack( 
+              child: Stack(
                 alignment: Alignment.topLeft,
                 children: [
-                  
-                  // A. Placeholder Contoh (Hanya muncul jika kondisi terpenuhi)
                   if (showExamplePlaceholder)
                     GestureDetector(
-                      onTap: () {
-                        _focusNode.requestFocus();
-                      },
+                      onTap: () => _focusNode.requestFocus(),
                       child: Container(
                         padding: const EdgeInsets.only(top: 0),
                         child: const Text(
-                          'Example: keep on the fence', // <--- CONTOH BERBEDA
+                          'Example: keep on the fence, dont ring the bell',
                           style: TextStyle(fontSize: 16, color: Colors.grey),
                         ),
                       ),
                     ),
-
-                  // B. TextField Catatan
                   TextField(
                     controller: _controller,
                     focusNode: _focusNode,
                     maxLines: null,
                     maxLength: _maxLength,
                     expands: true,
-                    onChanged: (text) {
-                      setState(() {});
-                    },
+                    onChanged: (text) => setState(() {}),
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
                       counterText: '',
-                      hintText: showExamplePlaceholder ? '' : null, 
+                      hintText: showExamplePlaceholder ? '' : null,
                     ),
                     style: const TextStyle(fontSize: 16),
                   ),
                 ],
               ),
             ),
-            
-            // --- 2. Bagian Bawah: Counter dan Tombol Save ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Counter Karakter
-                ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _controller,
-                  builder: (context, value, child) {
-                    return Text(
-                      '${value.text.length}/$_maxLength',
-                      style: const TextStyle(color: Colors.grey),
-                    );
-                  },
+                Text(
+                  '${_controller.text.length}/$_maxLength',
+                  style: const TextStyle(color: Colors.grey),
                 ),
-                
-                // Tombol Save
                 TextButton(
-                  onPressed: isSaveActive ? _saveNote : null, 
+                  onPressed: isSaveActive ? _saveNote : null,
                   style: TextButton.styleFrom(
                     backgroundColor: isSaveActive ? const Color(0xFF1E9C3C) : Colors.grey[300],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   ),
                   child: Text(
                     'Save',
                     style: TextStyle(
-                      color: isSaveActive ? Colors.white : Colors.black54, 
-                      fontWeight: FontWeight.bold
+                      color: isSaveActive ? Colors.white : Colors.black54,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),

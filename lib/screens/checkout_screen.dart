@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-// Asumsikan file-file screen ini ada di folder yang benar
-import 'location_screen.dart'; 
+// IMPORT FIREBASE
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../models/menu_item.dart'; // Pastikan path model benar
+
+// File screen lain
+import 'location_screen.dart';
 import 'payment_screen.dart';
 import 'order_success_screen.dart';
-import 'note_pesanan_screen.dart'; 
+import 'note_pesanan_screen.dart';
 import 'note_delivery_screen.dart';
 
 // ==========================================
-// 1. MODEL DATA
+// 1. MODEL DATA DELIVERY
 // ==========================================
-
-// Model untuk Pilihan Pengiriman
 class DeliveryOption {
   final String title;
   final String duration;
@@ -26,7 +30,6 @@ class DeliveryOption {
   });
 }
 
-// Data Pilihan Pengiriman (Statis)
 final List<DeliveryOption> deliveryOptions = [
   DeliveryOption(
     title: 'Express',
@@ -42,44 +45,44 @@ final List<DeliveryOption> deliveryOptions = [
   ),
 ];
 
-// Data statis lain
-const String restaurantName = "Katsugi Bento by Kopi Bambang";
-const String deliveryAddress = "Jalan Raya Dadaprejo No .293";
-const int staticPriceItem = 23000;
-
-
 // ==========================================
 // 2. CHECKOUT SCREEN (STATEFUL)
 // ==========================================
 class CheckoutScreen extends StatefulWidget {
-  final int initialSubtotal; 
+  final int initialSubtotal;
+  final List<MenuItem> cartItems;
+  final String orderTitle;
 
-  const CheckoutScreen({super.key, required this.initialSubtotal});
+  const CheckoutScreen({
+    super.key,
+    required this.initialSubtotal,
+    required this.cartItems,
+    required this.orderTitle,
+  });
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  // Index dari pilihan delivery yang sedang aktif (Default: Reguler index 1)
-  int _selectedDeliveryIndex = 1; 
+  int _selectedDeliveryIndex = 1;
+  String _currentPaymentMethod = 'Cash Money';
   
-  // State untuk menyimpan pilihan pembayaran yang aktif
-  String _currentPaymentMethod = 'Cash Money'; 
-  
-  // State untuk menyimpan catatan item menu
+  // Note untuk Makanan (Sementara di memory)
   String _itemNote = '';
-  // State untuk menyimpan catatan pengiriman
+  
+  // Note untuk Pengiriman (Delivery Location)
   String _deliveryNote = ''; 
 
-  // Data mapping untuk Ikon pembayaran
+  // Alamat Default Kosong (Wajib pilih)
+  String _deliveryAddress = ""; 
+
   final Map<String, IconData> _paymentIcons = {
     'Cash Money': Icons.money,
     'Gopay': Icons.phone_android,
     'Credit Card': Icons.credit_card,
   };
-  
-  // Variabel untuk menyimpan harga berdasarkan state
+
   late int _subtotal;
   late int _deliveryFee;
   late int _total;
@@ -91,18 +94,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _calculatePrices(deliveryOptions[_selectedDeliveryIndex].price);
   }
 
-  // Helper untuk format mata uang
   String formatCurrency(int amount) {
-    return NumberFormat.currency(locale: 'id', symbol: 'Rp.', decimalDigits: 0).format(amount);
+    return NumberFormat.currency(
+      locale: 'id',
+      symbol: 'Rp.',
+      decimalDigits: 0,
+    ).format(amount);
   }
-  
-  // FUNGSI UNTUK MENGHITUNG HARGA AWAL (TANPA setState)
+
   void _calculatePrices(int newDeliveryFee) {
     _deliveryFee = newDeliveryFee;
     _total = _subtotal + _deliveryFee;
   }
 
-  // FUNGSI UNTUK MENGHITUNG HARGA SETELAH STATE BERUBAH (DIPANGGIL DI setState)
   void _updatePricesState(int newDeliveryFee) {
     _deliveryFee = newDeliveryFee;
     _total = _subtotal + _deliveryFee;
@@ -114,8 +118,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       _updatePricesState(deliveryOptions[index].price);
     });
   }
-  
-  // --- WIDGET CONTAINER PEMBUNGKUS DENGAN SHADOW ---
+
   Widget _buildCardWrapper({required Widget child, EdgeInsets? padding}) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -135,8 +138,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // --- WIDGET HELPER ---
-
   SliverAppBar _buildCustomAppBar(BuildContext context) {
     return SliverAppBar(
       pinned: true,
@@ -146,9 +147,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         icon: const Icon(Icons.arrow_back, color: Colors.black),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const Text(
-        restaurantName,
-        style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+      title: Text(
+        widget.orderTitle,
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       centerTitle: false,
     );
@@ -157,36 +162,44 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget _buildDeliveryOption(int index, DeliveryOption option) {
     bool isSelected = _selectedDeliveryIndex == index;
 
-    return InkWell( 
+    return InkWell(
       onTap: () => _selectDelivery(index),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Expanded pada Column ini memperbaiki isu overflow di layar kecil
-            Expanded( 
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Flexible( // Flexible memastikan Text menyesuaikan diri
+                      Flexible(
                         child: Text(
                           option.title,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           option.duration,
-                          style: TextStyle(fontSize: 12, color: Colors.green[700]),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green[700],
+                          ),
                         ),
                       ),
                     ],
@@ -203,11 +216,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               children: [
                 Text(
                   formatCurrency(option.price),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Icon(
-                  isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                  isSelected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
                   color: isSelected ? const Color(0xFF1E9C3C) : Colors.grey,
                 ),
               ],
@@ -219,30 +237,42 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildDeliveryLocationContent(BuildContext context) {
-    final String noteButtonLabel = _deliveryNote.isNotEmpty ? 'edit catatan' : 'Catatan';
+    final String noteButtonLabel = _deliveryNote.isNotEmpty
+        ? 'edit catatan'
+        : 'Catatan';
+    
+    bool isAddressEmpty = _deliveryAddress.isEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Delivery location',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black54),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black54,
+          ),
         ),
         const SizedBox(height: 8),
-        const Text(
-          deliveryAddress,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        Text(
+          isAddressEmpty ? "Alamat belum di-setting" : _deliveryAddress,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: isAddressEmpty ? Colors.red : Colors.black,
+          ),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            // TOMBOL CATATAN PENGIRIMAN
             ElevatedButton.icon(
               onPressed: () async {
                 final newNote = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => NoteDeliveryScreen(initialNote: _deliveryNote),
+                    builder: (context) =>
+                        NoteDeliveryScreen(initialNote: _deliveryNote),
                   ),
                 );
 
@@ -253,43 +283,59 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 }
               },
               icon: Icon(
-                _deliveryNote.isNotEmpty ? Icons.edit_note : Icons.edit_note, 
-                size: 20, 
-                color: Colors.white
-              ), 
+                _deliveryNote.isNotEmpty ? Icons.edit_note : Icons.edit_note,
+                size: 20,
+                color: Colors.white,
+              ),
               label: Text(
                 noteButtonLabel,
-                style: const TextStyle(color: Colors.white)
+                style: const TextStyle(color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E9C3C),
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
             const SizedBox(width: 12),
-            // Tombol Change Location
             ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                final selectedLocation = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const LocationScreen(),
+                    builder: (context) => LocationScreen(
+                      currentAddress: isAddressEmpty ? null : _deliveryAddress,
+                    ),
                   ),
                 );
+
+                if (selectedLocation != null && selectedLocation is String) {
+                  setState(() {
+                    _deliveryAddress = selectedLocation;
+                  });
+                }
               },
-              icon: const Icon(Icons.location_on_outlined, size: 20, color: Colors.white),
-              label: const Text('Change location', style: TextStyle(color: Colors.white)),
+              icon: const Icon(
+                Icons.location_on_outlined,
+                size: 20,
+                color: Colors.white,
+              ),
+              label: Text(
+                isAddressEmpty ? 'Pilih Lokasi' : 'Change location',
+                style: const TextStyle(color: Colors.white),
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E9C3C),
+                backgroundColor: isAddressEmpty ? Colors.red : const Color(0xFF1E9C3C),
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ],
         ),
-        
-        // MENAMPILKAN CATATAN PENGIRIMAN
         if (_deliveryNote.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 16.0),
@@ -301,7 +347,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                _deliveryNote,
+                "Note: $_deliveryNote",
                 style: const TextStyle(color: Colors.black87, fontSize: 14),
               ),
             ),
@@ -311,79 +357,103 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildItemSummaryContent() {
-    final String itemNoteButtonLabel = _itemNote.isNotEmpty ? 'edit catatan' : 'Catatan';
+    final String itemNoteButtonLabel = _itemNote.isNotEmpty
+        ? 'edit catatan'
+        : 'Catatan';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Chicken Katsu Single',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    formatCurrency(staticPriceItem),
-                    style: const TextStyle(fontSize: 14, color: Colors.black),
+        ...widget.cartItems.map((item) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    item.imageUrl,
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                    errorBuilder: (ctx, err, stack) => Container(
+                      width: 60,
+                      height: 60,
+                      color: Colors.grey,
+                    ),
                   ),
-                  const Text(
-                    'item : 1',
-                    style: TextStyle(fontSize: 14, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // TOMBOL CATATAN MENU ITEM
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final newNote = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NotePesananScreen(initialNote: _itemNote),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
-                      );
-
-                      if (newNote != null && newNote is String) {
-                        setState(() {
-                          _itemNote = newNote;
-                        });
-                      }
-                    },
-                    icon: const Icon(Icons.edit_note, size: 20, color: Colors.white),
-                    label: Text(
-                      itemNoteButtonLabel,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E9C3C),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            formatCurrency(item.price),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black,
+                            ),
+                          ),
+                          Text(
+                            'Item : ${item.quantity}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500&q=80",
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ],
-        ),
+          );
+        }).toList(),
+        const Divider(height: 24),
         
-        // MENAMPILKAN CATATAN MENU ITEM
+        ElevatedButton.icon(
+          onPressed: () async {
+            final newNote = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => NotePesananScreen(initialNote: _itemNote),
+              ),
+            );
+
+            if (newNote != null && newNote is String) {
+              setState(() {
+                _itemNote = newNote;
+              });
+            }
+          },
+          icon: const Icon(Icons.edit_note, size: 20, color: Colors.white),
+          label: Text(
+            itemNoteButtonLabel,
+            style: const TextStyle(color: Colors.white),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF1E9C3C),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
         if (_itemNote.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 16.0),
@@ -395,7 +465,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                _itemNote,
+                "Order Note: $_itemNote",
                 style: const TextStyle(color: Colors.black87, fontSize: 14),
               ),
             ),
@@ -405,7 +475,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildPaymentMethodTile(BuildContext context) {
-    IconData currentIcon = _paymentIcons[_currentPaymentMethod] ?? Icons.credit_card_outlined;
+    IconData currentIcon =
+        _paymentIcons[_currentPaymentMethod] ?? Icons.credit_card_outlined;
 
     return InkWell(
       onTap: () async {
@@ -430,10 +501,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
-
           Text(
             _currentPaymentMethod,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+            ),
           ),
           const SizedBox(width: 8),
           const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
@@ -480,15 +554,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-// ==========================================
-// 3. WIDGET BUILD UTAMA
-// ==========================================
   @override
   Widget build(BuildContext context) {
+    bool isAddressEmpty = _deliveryAddress.isEmpty;
+
     return Scaffold(
-      backgroundColor: Colors.grey[100], 
-      
-      // BOTTOM NAVIGATION BAR (Button Place Order)
+      backgroundColor: Colors.grey[100],
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
@@ -504,89 +575,146 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         child: SizedBox(
           height: 50,
           child: ElevatedButton(
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const OrderSuccessScreen(),
-                ),
+            // ==========================================
+            // LOGIKA FIREBASE PLACE ORDER DI SINI
+            // ==========================================
+            onPressed: () async {
+              // 1. Validasi Alamat Wajib Dipilih
+              if (isAddressEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Harap pilih alamat pengiriman terlebih dahulu!"),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
+
+              // 2. Tampilkan Loading Sederhana
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Sedang memproses pesanan...")),
               );
+
+              try {
+                // 3. Ambil User Login Saat Ini
+                User? user = FirebaseAuth.instance.currentUser;
+                if (user == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("User tidak terdeteksi. Silakan login.")),
+                  );
+                  return;
+                }
+
+                // 4. SUSUN DATA UNTUK DIKIRIM KE FIREBASE 'orders'
+                // Ini akan menggabungkan semua data dari halaman ini
+                await FirebaseFirestore.instance.collection('orders').add({
+                  'userId': user.uid,
+                  'createdAt': FieldValue.serverTimestamp(),
+                  'status': 'pending',
+                  
+                  // -- Info Harga --
+                  'subtotal': _subtotal,
+                  'deliveryFee': _deliveryFee,
+                  'totalPrice': _total,
+                  'paymentMethod': _currentPaymentMethod,
+
+                  // -- Info Pengiriman --
+                  'deliveryOption': deliveryOptions[_selectedDeliveryIndex].title,
+                  'deliveryAddress': _deliveryAddress,
+                  'deliveryNote': _deliveryNote,
+
+                  // -- Info Makanan & Note Makanan --
+                  'orderNote': _itemNote,
+                  
+                  // -- Daftar Barang yang Dibeli (Array) --
+                  'items': widget.cartItems.map((item) {
+                    return {
+                      'title': item.title,
+                      'price': item.price,
+                      'quantity': item.quantity,
+                      'image': item.imageUrl,
+                    };
+                  }).toList(),
+                });
+
+                // 5. SUKSES! Pindah ke layar sukses dan hapus stack sebelumnya
+                if (context.mounted) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const OrderSuccessScreen(),
+                    ),
+                  );
+                }
+
+              } catch (e) {
+                // Kalau Error (misal internet mati)
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Gagal membuat pesanan: $e")),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E9C3C),
+              backgroundColor: isAddressEmpty ? Colors.grey : const Color(0xFF1E9C3C),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: const Text(
               'Place delivery order',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
         ),
       ),
-      
-      // BODY (CustomScrollView)
       body: CustomScrollView(
-        // ClampingScrollPhysics memperbaiki scroll yang tidak perlu di bawah
-        physics: const ClampingScrollPhysics(), 
-
+        physics: const ClampingScrollPhysics(),
         slivers: [
-          // 1. APP BAR
           _buildCustomAppBar(context),
-
-          // 2. DAFTAR KARTU (SLIVER LIST)
           SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                // CARD 1: Pilihan Pengiriman
-                _buildCardWrapper(
-                  child: Column(
-                    children: deliveryOptions.asMap().entries.map((entry) {
-                      int index = entry.key;
-                      DeliveryOption option = entry.value;
-                      return Column(
-                        children: [
-                          _buildDeliveryOption(index, option),
-                          if (index < deliveryOptions.length - 1)
-                            const Divider(height: 1, color: Colors.black12),
-                        ],
-                      );
-                    }).toList(),
-                  ),
+            delegate: SliverChildListDelegate([
+              _buildCardWrapper(
+                child: Column(
+                  children: deliveryOptions.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    DeliveryOption option = entry.value;
+                    return Column(
+                      children: [
+                        _buildDeliveryOption(index, option),
+                        if (index < deliveryOptions.length - 1)
+                          const Divider(height: 1, color: Colors.black12),
+                      ],
+                    );
+                  }).toList(),
                 ),
-
-                // CARD 2: Lokasi Pengiriman + Delivery Notes
-                _buildCardWrapper(
-                  padding: const EdgeInsets.all(16.0),
-                  child: _buildDeliveryLocationContent(context),
+              ),
+              _buildCardWrapper(
+                padding: const EdgeInsets.all(16.0),
+                child: _buildDeliveryLocationContent(context),
+              ),
+              _buildCardWrapper(
+                padding: const EdgeInsets.all(16.0),
+                child: _buildItemSummaryContent(),
+              ),
+              _buildCardWrapper(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 12.0,
                 ),
-                
-                // CARD 3: Item Summary + Item Notes
-                _buildCardWrapper(
-                  padding: const EdgeInsets.all(16.0),
-                  child: _buildItemSummaryContent(),
-                ),
-                
-                // CARD 4: Payment Method
-                _buildCardWrapper(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0), 
-                  child: _buildPaymentMethodTile(context),
-                ),
-                
-                // CARD 5: Price Summary
-                _buildCardWrapper(
-                  child: _buildPriceSummary(),
-                  padding: const EdgeInsets.all(16.0),
-                ),
-              ],
-            ),
+                child: _buildPaymentMethodTile(context),
+              ),
+              _buildCardWrapper(
+                child: _buildPriceSummary(),
+                padding: const EdgeInsets.all(16.0),
+              ),
+            ]),
           ),
-          
-          // 3. SPACER UNTUK BOTTOM NAVIGATION BAR
-          const SliverToBoxAdapter(
-              child: SizedBox(height: 10), 
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 10)),
         ],
       ),
     );
