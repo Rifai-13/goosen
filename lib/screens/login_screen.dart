@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:goosen/screens/main_screen.dart';
-import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,7 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isButtonActive = false;
-  
+
   // 1. STATE UNTUK PASSWORD VISIBILITY
   bool _isPasswordVisible = false;
 
@@ -36,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _validateFields() {
     final emailValid = EmailValidator.validate(_emailController.text);
-    final passwordValid = _passwordController.text.length >= 6; 
+    final passwordValid = _passwordController.text.length >= 6;
 
     final newStatus = emailValid && passwordValid;
 
@@ -54,8 +53,8 @@ class _LoginScreenState extends State<LoginScreen> {
         content: Row(
           children: [
             Icon(
-              isError ? Icons.error_outline : Icons.check_circle, 
-              color: Colors.white
+              isError ? Icons.error_outline : Icons.check_circle,
+              color: Colors.white,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -68,11 +67,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         backgroundColor: isError ? Colors.red : Colors.green,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: EdgeInsets.only(
-          bottom: MediaQuery.of(context).size.height - 150, 
+          bottom: MediaQuery.of(context).size.height - 150,
           left: 16,
           right: 16,
         ),
@@ -102,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (context.mounted) Navigator.pop(context);
 
         _showTopNotification("Login Berhasil! Selamat Datang.");
-        
+
         // Delay sedikit
         await Future.delayed(const Duration(seconds: 1));
 
@@ -110,18 +107,15 @@ class _LoginScreenState extends State<LoginScreen> {
         if (context.mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => const MainScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const MainScreen()),
           );
         }
-
       } on FirebaseAuthException catch (e) {
         // Tutup loading jika error
         if (context.mounted) Navigator.pop(context);
 
         String message = 'Terjadi kesalahan login.';
-        
+
         // Cek error code dari Firebase
         if (e.code == 'user-not-found') {
           message = 'Email tidak terdaftar.';
@@ -136,7 +130,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Tampilkan Error Merah di Atas
         _showTopNotification(message, isError: true);
-        
       } catch (e) {
         if (context.mounted) Navigator.pop(context);
         _showTopNotification('Error: $e', isError: true);
@@ -179,11 +172,11 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 8),
             _buildInputField(
-              controller: _emailController, 
-              hint: 'Email', 
-              keyboardType: TextInputType.emailAddress
+              controller: _emailController,
+              hint: 'Email',
+              keyboardType: TextInputType.emailAddress,
             ),
-            
+
             const SizedBox(height: 24),
 
             // --- FIELD PASSWORD (DENGAN MATA) ---
@@ -193,8 +186,8 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 8),
             _buildInputField(
-              controller: _passwordController, 
-              hint: 'Password', 
+              controller: _passwordController,
+              hint: 'Password',
               keyboardType: TextInputType.visiblePassword,
               obscureText: !_isPasswordVisible,
               suffixIcon: IconButton(
@@ -235,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 230),
 
             // --- FOOTER TEKS ---
             Align(
@@ -280,27 +273,31 @@ class _LoginScreenState extends State<LoginScreen> {
     bool obscureText = false,
     Widget? suffixIcon,
   }) {
-    return Container(
-      height: 55, // Tinggi fix biar rapi
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          obscureText: obscureText,
-          textAlignVertical: TextAlignVertical.center,
-          decoration: InputDecoration(
-            hintText: hint,
-            border: InputBorder.none,
-            isDense: true,
-            contentPadding: EdgeInsets.zero,
-            suffixIcon: suffixIcon,
-          ),
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+
+      style: const TextStyle(fontSize: 16, color: Colors.black),
+
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey.shade400),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 10,
+          horizontal: 16,
         ),
+        suffixIcon: suffixIcon,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF1E9C3C), width: 2.0),
+        ),
+        filled: true,
+        fillColor: Colors.white,
       ),
     );
   }
