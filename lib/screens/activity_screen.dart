@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 // ==========================================
 // 1. ACTIVITY SCREEN UTAMA
@@ -8,18 +11,15 @@ class ActivityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Gunakan DefaultTabController untuk mengontrol tab navigation
     return DefaultTabController(
-      length: 3, // Jumlah tab: Dalam Proses, Riwayat, Cancel
+      length: 3,
       child: Scaffold(
-        // Hapus: bottomNavigationBar di sini
         backgroundColor: Colors.white,
 
-        // --- CUSTOM APP BAR DENGAN TABS ---
+        // --- CUSTOM APP BAR ---
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          // Hilangkan tombol back default karena diurus oleh MainScreen (index 0)
           automaticallyImplyLeading: false, 
           title: const Text(
             'Activity',
@@ -48,12 +48,12 @@ class ActivityScreen extends StatelessWidget {
         // --- BODY: KONTEN TAB ---
         body: TabBarView(
           children: [
-            // Konten Tab 1: Dalam Proses (Menampilkan Card Pesanan)
-            _buildDalamProsesTab(),
-            // Konten Tab 2: Riwayat (Placeholder)
-            _buildPlaceholderTab('Riwayat Pesanan'),
-            // Konten Tab 3: Cancel (Placeholder)
-            _buildPlaceholderTab('Pesanan Dibatalkan'),
+            // Tab 1: Menampilkan Data Realtime dari Firebase
+            _buildOrderListStream(status: 'pending'), // Status pending masuk sini
+            
+            // Tab 2 & 3: Placeholder (Bisa diganti logicnya nanti)
+            _buildOrderListStream(status: 'completed'), // Riwayat
+            _buildOrderListStream(status: 'cancelled'), // Cancel
           ],
         ),
       ),
@@ -61,56 +61,120 @@ class ActivityScreen extends StatelessWidget {
   }
 
   // ==========================================
-  // 2. WIDGET TAB CONTENT
+  // 2. STREAM BUILDER (Logic Pengambil Data)
   // ==========================================
+  Widget _buildOrderListStream({required String status}) {
+    final User? user = FirebaseAuth.instance.currentUser;
 
-  Widget _buildDalamProsesTab() {
-    // SingleChildScrollView penting agar daftar pesanan bisa di-scroll
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          _buildActivityCard(
-            title: 'Chicken Katsu Single',
-            price: '23.000',
-            itemCount: 1,
-            note: 'extra saus',
-            // Gunakan gambar yang sesuai dari konteks Anda
-            imageUrl: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500&q=80',
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
+    if (user == null) {
+      return const Center(child: Text("Silakan login terlebih dahulu"));
+    }
 
-  Widget _buildPlaceholderTab(String title) {
-    return Center(
-      child: Text(
-        'Belum ada $title',
-        style: const TextStyle(fontSize: 16, color: Colors.grey),
-      ),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('orders')
+          .where('userId', isEqualTo: user.uid) // Filter punya user sendiri
+          .where('status', isEqualTo: status)   // Filter status (pending/completed/cancelled)
+          .orderBy('createdAt', descending: true) // Urutkan dari yang terbaru
+          .snapshots(), 
+      builder: (context, snapshot) {
+        // 1. Kondisi Loading
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        // 2. Kondisi Error
+        if (snapshot.hasError) {
+          return Center(child: Text("Error: ${snapshot.error}"));
+        }
+
+        // 3. Kondisi Data Kosong
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.receipt_long, size: 60, color: Colors.grey[300]),
+                const SizedBox(height: 16),
+                Text(
+                  'Belum ada pesanan ($status)',
+                  style: TextStyle(color: Colors.grey[500]),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // 4. Render Data
+        final docs = snapshot.data!.docs;
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16.0),
+          itemCount: docs.length,
+          itemBuilder: (context, index) {
+            final data = docs[index].data() as Map<String, dynamic>;
+            final String docId = docs[index].id; // ID Dokumen untuk update status nanti
+
+            // Ambil data Items (Array)
+            List<dynamic> items = data['items'] ?? [];
+            
+            // Ambil data Item Pertama untuk ditampilkan sebagai "Wajah" card
+            // (Atau bisa diloop kalau mau tampilkan semua)
+            var firstItem = items.isNotEmpty ? items[0] : {};
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: _buildActivityCard(
+                context: context,
+                docId: docId,
+                title: firstItem['title'] ?? 'Menu Item',
+                price: data['totalPrice'] ?? 0, // Harga Total Order
+                itemCount: items.length, // Jumlah jenis item
+                totalQty: items.fold(0, (sum, item) => sum + (item['quantity'] as int)), // Total qty barang
+                note: data['orderNote'] ?? '-',
+                imageUrl: firstItem['image'] ?? 'https://via.placeholder.com/150',
+                status: status,
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
   // ==========================================
   // 3. WIDGET ITEM PESANAN (CARD)
   // ==========================================
-
   Widget _buildActivityCard({
+    required BuildContext context,
+    required String docId,
     required String title,
-    required String price,
+    required int price,
     required int itemCount,
+    required int totalQty,
     required String note,
     required String imageUrl,
+    required String status,
   }) {
+    // Helper format duit
+    String formatCurrency(int amount) {
+      return NumberFormat.currency(
+        locale: 'id',
+        symbol: 'Rp.',
+        decimalDigits: 0,
+      ).format(amount);
+    }
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        // Border hijau menunjukkan pesanan sedang dalam proses
-        border: Border.all(color: const Color(0xFF1E9C3C), width: 1.5), 
+        // Border hijau kalau pending, abu-abu kalau selesai
+        border: Border.all(
+          color: status == 'pending' ? const Color(0xFF1E9C3C) : Colors.grey.shade300, 
+          width: 1.5
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -130,9 +194,10 @@ class ActivityScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
                   imageUrl,
-                  width: 50,
-                  height: 50,
+                  width: 60,
+                  height: 60,
                   fit: BoxFit.cover,
+                  errorBuilder: (ctx, err, stack) => Container(width: 60, height: 60, color: Colors.grey),
                 ),
               ),
               const SizedBox(width: 12),
@@ -143,19 +208,26 @@ class ActivityScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      // Jika item lebih dari 1, tambahkan tulisan "& others"
+                      itemCount > 1 ? "$title & ${itemCount - 1} others" : title,
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Rp.$price | $itemCount item',
+                      '${formatCurrency(price)} | $totalQty items',
                       style: const TextStyle(fontSize: 14, color: Colors.black87),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      note,
-                      style: const TextStyle(fontSize: 14, color: Colors.green),
-                    ),
+                    // Tampilkan Note jika ada
+                    if (note.isNotEmpty)
+                      Text(
+                        "Note: $note",
+                        style: const TextStyle(fontSize: 12, color: Colors.green),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                   ],
                 ),
               ),
@@ -163,45 +235,65 @@ class ActivityScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           
-          // Tombol Aksi
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // Tombol Completed (Outline Button dengan border hijau)
-              SizedBox(
-                height: 35,
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF1E9C3C),
-                    side: const BorderSide(color: Color(0xFF1E9C3C)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+          // Tombol Aksi (Hanya muncul jika status Pending)
+          if (status == 'pending')
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Tombol Cancel (Fungsi Beneran: Update Status ke Cancelled)
+                SizedBox(
+                  height: 35,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      _updateOrderStatus(docId, 'cancelled');
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
+                    child: const Text('Cancel'),
                   ),
-                  child: const Text('Complitied'),
                 ),
-              ),
-              const SizedBox(width: 8),
-              // Tombol Cancel (Outline Button dengan border merah)
-              SizedBox(
-                height: 35,
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                const SizedBox(width: 8),
+                
+                // Tombol Complete (Fungsi Beneran: Update Status ke Completed)
+                SizedBox(
+                  height: 35,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      _updateOrderStatus(docId, 'completed');
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF1E9C3C),
+                      side: const BorderSide(color: Color(0xFF1E9C3C)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
+                    child: const Text('Complete'),
                   ),
-                  child: const Text('Cancel'),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );
+  }
+
+  // ==========================================
+  // 4. FUNGSI UPDATE STATUS (CANCEL/COMPLETE)
+  // ==========================================
+  Future<void> _updateOrderStatus(String docId, String newStatus) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('orders')
+          .doc(docId)
+          .update({'status': newStatus});
+    } catch (e) {
+      print("Gagal update status: $e");
+    }
   }
 }
