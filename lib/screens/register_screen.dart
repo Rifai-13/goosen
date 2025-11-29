@@ -53,7 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  // --- FUNGSI BARU KHUSUS NOTIFIKASI DI ATAS ---
+  // --- FUNGSI NOTIFIKASI DI ATAS ---
   void _showTopNotification(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -115,13 +115,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
         await userCredential.user!.updateDisplayName(_nameController.text.trim());
 
-        // Tutup Loading
         if (context.mounted) Navigator.pop(context);
 
-        // --- PANGGIL NOTIF HIJAU DI SINI ---
         _showTopNotification("Registrasi Berhasil! Silakan Login.");
 
-        // Delay sebentar biar notif terbaca sebelum pindah halaman
         await Future.delayed(const Duration(seconds: 2));
 
         if (context.mounted) {
@@ -141,12 +138,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           message = 'Password minimal 6 karakter.';
         }
         
-        // Panggil notif Error (Merah) di atas
         _showTopNotification(message, isError: true);
         
       } catch (e) {
         if (context.mounted) Navigator.pop(context);
-        // Panggil notif Error (Merah) di atas
         _showTopNotification('Error: $e', isError: true);
       }
     }
@@ -154,7 +149,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final buttonColor = _isButtonActive ? Colors.green : Colors.grey[300];
+    final buttonColor = _isButtonActive ? const Color(0xFF1E9C3C) : Colors.grey[300];
     final textColor = _isButtonActive ? Colors.white : Colors.black54;
 
     return Scaffold(
@@ -178,16 +173,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
 
-            _buildInputField('Nama', 'Nama', _nameController, TextInputType.text),
-            const SizedBox(height: 24),
+            _buildInputField('Nama', 'Nama Lengkap', _nameController, TextInputType.name),
+            const SizedBox(height: 20),
 
             _buildInputField('Email', 'Email', _emailController, TextInputType.emailAddress),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            _buildInputField('Nomor Telepon', 'No.Telepon', _phoneController, TextInputType.phone),
-            const SizedBox(height: 24),
+            _buildInputField('Nomor Telepon', '08xxxxx', _phoneController, TextInputType.phone),
+            const SizedBox(height: 20),
 
             _buildInputField(
               'Password', 
@@ -207,7 +202,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
 
             SizedBox(
               width: double.infinity,
@@ -227,7 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 78),
 
             Align(
               alignment: Alignment.center,
@@ -257,6 +252,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // --- WIDGET INPUT FIELD YANG SUDAH DIUPDATE ---
   Widget _buildInputField(
     String label, 
     String hint, 
@@ -269,27 +265,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        Container(
-          height: 55,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: TextField(
-              controller: controller,
-              keyboardType: keyboardType,
-              obscureText: obscureText,
-              textAlignVertical: TextAlignVertical.center,
-              decoration: InputDecoration(
-                hintText: hint,
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-                suffixIcon: suffixIcon,
+        
+        // Langsung TextField tanpa Container pembungkus
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          textAlignVertical: TextAlignVertical.center,
+          
+          style: const TextStyle(fontSize: 16, color: Colors.black),
+          
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey.shade400),
+            
+            // Padding teks yang pas
+            contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            
+            suffixIcon: suffixIcon,
+            
+            // BORDER SAAT NORMAL (ABU-ABU)
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: Colors.grey.shade300, 
+                width: 1.5
               ),
             ),
+
+            // BORDER SAAT DIKLIK/FOKUS (HIJAU)
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFF1E9C3C),
+                width: 2.0, 
+              ),
+            ),
+            
+            filled: true,
+            fillColor: Colors.white,
           ),
         ),
       ],
