@@ -38,7 +38,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // Tombol 'Applay' di bawah
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16.0),
         color: Colors.white,
@@ -46,11 +45,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
           height: 50,
           child: ElevatedButton(
             onPressed: () {
-              // Mengembalikan pilihan yang aktif (_selectedMethod) ke halaman CheckoutScreen
               Navigator.pop(context, _selectedMethod);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E9C3C), // Warna hijau
+              backgroundColor: const Color(0xFF1E9C3C),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -91,7 +89,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          // Generate daftar opsi pembayaran
           children: paymentOptions.map((method) {
             return _buildPaymentOption(method);
           }).toList(),
@@ -114,7 +111,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(
           vertical: 4.0,
-        ), // Padding vertikal antar opsi
+        ),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           decoration: BoxDecoration(

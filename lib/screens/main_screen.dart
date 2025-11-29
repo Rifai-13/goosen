@@ -5,21 +5,21 @@ import 'activity_screen.dart';
 import 'home_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  final int initialIndex; // Tambahkan parameter ini
+  final int initialIndex;
 
-  const MainScreen({super.key, this.initialIndex = 0}); // Default ke 0 (Home)
+  const MainScreen({super.key, this.initialIndex = 0});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  late int _selectedIndex; // Ubah jadi late agar bisa diinisialisasi di initState
+  late int _selectedIndex;
 
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.initialIndex; // Gunakan index dari constructor
+    _selectedIndex = widget.initialIndex;
   }
 
   static final List<Widget> _pages = <Widget>[

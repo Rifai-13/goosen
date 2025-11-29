@@ -67,7 +67,6 @@ class ProfileScreen extends StatelessWidget {
                 }
 
                 // KONDISI 3: Data Berhasil Diambil
-                // Kita ambil datanya sebagai Map
                 var userData = snapshot.data!.data() as Map<String, dynamic>;
                 
                 // Ambil field (pakai default value string kosong biar gak error null)
@@ -108,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
                               ),
                               child: Center(
                                 child: Text(
-                                  initials, // Tampilkan Inisial Nama
+                                  initials,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 24,
@@ -125,7 +124,7 @@ class ProfileScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    name, // Nama dari Firestore
+                                    name,
                                     style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -136,7 +135,7 @@ class ProfileScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    email, // Email dari Firestore
+                                    email,
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey[600],
@@ -145,7 +144,7 @@ class ProfileScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    phone, // No HP dari Firestore
+                                    phone,
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey[600],
@@ -185,7 +184,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.person_outline, color: Colors.grey), // Ganti icon biar lebih relevan
+                              Icon(Icons.person_outline, color: Colors.grey),
                               SizedBox(width: 12),
                               Expanded(
                                 child: Text(

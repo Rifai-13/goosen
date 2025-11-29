@@ -49,8 +49,8 @@ class _NoteDeliveryScreenState extends State<NoteDeliveryScreen> {
             .collection('users')
             .doc(user!.uid)
             .set({
-          'last_delivery_note': noteText, // Field untuk menyimpan catatan terakhir
-        }, SetOptions(merge: true)); // Merge agar data lain tidak hilang
+          'last_delivery_note': noteText,
+        }, SetOptions(merge: true));
       } catch (e) {
         debugPrint("Gagal simpan note ke Firebase: $e");
       }
@@ -141,7 +141,7 @@ class _NoteDeliveryScreenState extends State<NoteDeliveryScreen> {
                   style: const TextStyle(color: Colors.grey),
                 ),
                 TextButton(
-                  onPressed: isSaveActive ? _saveNote : null, // Panggil _saveNote
+                  onPressed: isSaveActive ? _saveNote : null,
                   style: TextButton.styleFrom(
                     backgroundColor: isSaveActive ? const Color(0xFF1E9C3C) : Colors.grey[300],
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

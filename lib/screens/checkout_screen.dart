@@ -588,7 +588,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
-                return; // Stop eksekusi
+                return;
               }
 
               // 2. Tampilkan Loading Sederhana
@@ -610,8 +610,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 // Ini akan menggabungkan semua data dari halaman ini
                 await FirebaseFirestore.instance.collection('orders').add({
                   'userId': user.uid,
-                  'createdAt': FieldValue.serverTimestamp(), // Waktu server
-                  'status': 'pending', // Status awal
+                  'createdAt': FieldValue.serverTimestamp(),
+                  'status': 'pending',
                   
                   // -- Info Harga --
                   'subtotal': _subtotal,
@@ -620,12 +620,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   'paymentMethod': _currentPaymentMethod,
 
                   // -- Info Pengiriman --
-                  'deliveryOption': deliveryOptions[_selectedDeliveryIndex].title, // Express/Reguler
+                  'deliveryOption': deliveryOptions[_selectedDeliveryIndex].title,
                   'deliveryAddress': _deliveryAddress,
-                  'deliveryNote': _deliveryNote, // Note Alamat (Permanen/Firebase User)
+                  'deliveryNote': _deliveryNote,
 
                   // -- Info Makanan & Note Makanan --
-                  'orderNote': _itemNote, // <--- NOTE MAKANAN MASUK SINI
+                  'orderNote': _itemNote,
                   
                   // -- Daftar Barang yang Dibeli (Array) --
                   'items': widget.cartItems.map((item) {

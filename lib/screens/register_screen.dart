@@ -72,12 +72,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ],
         ),
-        backgroundColor: isError ? Colors.red : Colors.green, // Hijau jika sukses
+        backgroundColor: isError ? Colors.red : Colors.green,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
-        // TRIK POSISI: Margin bawah dibuat sangat tinggi supaya nempel di atas
         margin: EdgeInsets.only(
           bottom: MediaQuery.of(context).size.height - 150, 
           left: 16,
@@ -90,7 +89,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _handleRegister() async {
     if (_isButtonActive) {
-      // Tampilkan Loading
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -134,7 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
 
       } on FirebaseAuthException catch (e) {
-        if (context.mounted) Navigator.pop(context); // Tutup loading
+        if (context.mounted) Navigator.pop(context);
         
         String message = 'Terjadi kesalahan.';
         if (e.code == 'email-already-in-use') {

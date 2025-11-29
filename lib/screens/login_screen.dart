@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:goosen/screens/main_screen.dart'; // Pastikan path ini benar sesuai projectmu
-import 'home_screen.dart'; // Jika home_screen tidak dipakai, bisa dihapus
+import 'package:goosen/screens/main_screen.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -196,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _passwordController, 
               hint: 'Password', 
               keyboardType: TextInputType.visiblePassword,
-              obscureText: !_isPasswordVisible, // Toggle visibility
+              obscureText: !_isPasswordVisible,
               suffixIcon: IconButton(
                 icon: Icon(
                   _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -292,12 +292,12 @@ class _LoginScreenState extends State<LoginScreen> {
           controller: controller,
           keyboardType: keyboardType,
           obscureText: obscureText,
-          textAlignVertical: TextAlignVertical.center, // Teks pas di tengah
+          textAlignVertical: TextAlignVertical.center,
           decoration: InputDecoration(
             hintText: hint,
             border: InputBorder.none,
             isDense: true,
-            contentPadding: EdgeInsets.zero, // Hapus padding default
+            contentPadding: EdgeInsets.zero,
             suffixIcon: suffixIcon,
           ),
         ),

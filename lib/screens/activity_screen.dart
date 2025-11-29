@@ -49,11 +49,11 @@ class ActivityScreen extends StatelessWidget {
         body: TabBarView(
           children: [
             // Tab 1: Menampilkan Data Realtime dari Firebase
-            _buildOrderListStream(status: 'pending'), // Status pending masuk sini
+            _buildOrderListStream(status: 'pending'),
             
             // Tab 2 & 3: Placeholder (Bisa diganti logicnya nanti)
-            _buildOrderListStream(status: 'completed'), // Riwayat
-            _buildOrderListStream(status: 'cancelled'), // Cancel
+            _buildOrderListStream(status: 'completed'),
+            _buildOrderListStream(status: 'cancelled'),
           ],
         ),
       ),
@@ -73,9 +73,9 @@ class ActivityScreen extends StatelessWidget {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('orders')
-          .where('userId', isEqualTo: user.uid) // Filter punya user sendiri
-          .where('status', isEqualTo: status)   // Filter status (pending/completed/cancelled)
-          .orderBy('createdAt', descending: true) // Urutkan dari yang terbaru
+          .where('userId', isEqualTo: user.uid)
+          .where('status', isEqualTo: status)
+          .orderBy('createdAt', descending: true)
           .snapshots(), 
       builder: (context, snapshot) {
         // 1. Kondisi Loading
@@ -113,13 +113,11 @@ class ActivityScreen extends StatelessWidget {
           itemCount: docs.length,
           itemBuilder: (context, index) {
             final data = docs[index].data() as Map<String, dynamic>;
-            final String docId = docs[index].id; // ID Dokumen untuk update status nanti
+            final String docId = docs[index].id;
 
             // Ambil data Items (Array)
             List<dynamic> items = data['items'] ?? [];
             
-            // Ambil data Item Pertama untuk ditampilkan sebagai "Wajah" card
-            // (Atau bisa diloop kalau mau tampilkan semua)
             var firstItem = items.isNotEmpty ? items[0] : {};
 
             return Padding(
@@ -128,9 +126,9 @@ class ActivityScreen extends StatelessWidget {
                 context: context,
                 docId: docId,
                 title: firstItem['title'] ?? 'Menu Item',
-                price: data['totalPrice'] ?? 0, // Harga Total Order
-                itemCount: items.length, // Jumlah jenis item
-                totalQty: items.fold(0, (sum, item) => sum + (item['quantity'] as int)), // Total qty barang
+                price: data['totalPrice'] ?? 0,
+                itemCount: items.length, 
+                totalQty: items.fold(0, (sum, item) => sum + (item['quantity'] as int)), 
                 note: data['orderNote'] ?? '-',
                 imageUrl: firstItem['image'] ?? 'https://via.placeholder.com/150',
                 status: status,

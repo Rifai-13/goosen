@@ -18,8 +18,8 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
   late final TextEditingController _searchController;
   
   // 1. KITA BUTUH 2 LIST
-  List<MenuMakanan> _allMenu = []; // Data Master (Copy asli dari API)
-  List<MenuMakanan> _filteredMenu = []; // Data yang TAMPIL di layar
+  List<MenuMakanan> _allMenu = [];
+  List<MenuMakanan> _filteredMenu = [];
   
   bool isLoading = true;
 
@@ -42,8 +42,8 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
         final resultList = dataJSON.map((json) => MenuMakanan.fromJson(json)).toList();
 
         setState(() {
-          _allMenu = resultList;     // Simpan ke Master
-          _filteredMenu = resultList; // Awalnya tampilkan semua
+          _allMenu = resultList;
+          _filteredMenu = resultList;
           isLoading = false;
         });
       } else {
@@ -232,7 +232,7 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
                       ),
                     ],
                   ),
-                   const SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   Text(
                     "Rp ${item.harga}",
                     style: const TextStyle(

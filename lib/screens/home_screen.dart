@@ -7,7 +7,7 @@ import '../models/menu_makanan.dart';
 import '../widgets/my_food_card.dart';
 import '../widgets/home_appbar.dart';
 import '../screens/all_food_screen.dart';
-import '../screens/restaurant_menu_screen.dart'; // Jangan lupa import ini buat navigasi detail
+import '../screens/restaurant_menu_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,12 +20,12 @@ class _HomeScreenState extends State<HomeScreen> {
   late final TextEditingController _searchController;
 
   // 1. Variabel Data Utama
-  List<MenuMakanan> listTopRated = []; // Data Master (Sumber)
+  List<MenuMakanan> listTopRated = [];
   bool isLoading = true;
 
   // 2. Variabel Tambahan untuk Search
-  List<MenuMakanan> _searchResults = []; // Data Hasil Filter
-  bool _isSearching = false; // Penanda sedang mencari atau tidak
+  List<MenuMakanan> _searchResults = [];
+  bool _isSearching = false;
 
   @override
   void initState() {
@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Tambah warna background biar bersih
+      backgroundColor: Colors.white,
       appBar: HomeAppBar(
         searchController: _searchController,
         showProfile: true,
@@ -98,14 +98,11 @@ class _HomeScreenState extends State<HomeScreen> {
           FocusScope.of(context).unfocus();
         },
         // 5. LOGIC TAMPILAN (SWITCHING)
-        // Jika sedang loading -> Tampilkan Loading
-        // Jika sedang searching -> Tampilkan List Pencarian (Vertical)
-        // Jika normal -> Tampilkan Banner & Top Rated (Horizontal)
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : _isSearching
-            ? _buildSearchResults() // Tampilan Mode Cari
-            : _buildNormalContent(), // Tampilan Mode Normal
+            ? _buildSearchResults()
+            : _buildNormalContent()
       ),
     );
   }
@@ -195,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               MaterialPageRoute(
                                 builder: (context) => RestaurantMenuScreen(
                                   selectedMenu:
-                                      food, // Kirim data makanan yang diklik
+                                      food,
                                 ),
                               ),
                             );

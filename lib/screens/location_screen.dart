@@ -41,7 +41,7 @@ class _LocationScreenState extends State<LocationScreen> {
           .collection('addresses')
           .add({
         'address': newAddress,
-        'createdAt': FieldValue.serverTimestamp(), // Biar bisa diurutkan
+        'createdAt': FieldValue.serverTimestamp(),
       });
       
       // Reset text field dan tutup dialog
@@ -154,7 +154,7 @@ class _LocationScreenState extends State<LocationScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: InkWell(
-                onTap: _showAddLocationDialog, // Panggil fungsi dialog
+                onTap: _showAddLocationDialog,
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -183,7 +183,7 @@ class _LocationScreenState extends State<LocationScreen> {
                   .collection('users')
                   .doc(user!.uid)
                   .collection('addresses')
-                  .orderBy('createdAt', descending: true) // Urutkan dari yang terbaru
+                  .orderBy('createdAt', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -222,7 +222,7 @@ class _LocationScreenState extends State<LocationScreen> {
     return InkWell(
       onTap: () {
         setState(() {
-          _selectedAddress = address; // Update state pilihan
+          _selectedAddress = address;
         });
       },
       child: Container(

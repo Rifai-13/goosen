@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // 1. WAJIB IMPORT INI
+import 'package:firebase_auth/firebase_auth.dart';
 import 'menu_awal_screen.dart'; 
 
 class ManageAccountScreen extends StatelessWidget {
@@ -102,13 +102,13 @@ class ManageAccountScreen extends StatelessWidget {
           content: const Text('Apakah kamu yakin ingin keluar?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx), // Tutup dialog (Batal)
+              onPressed: () => Navigator.pop(ctx),
               child: const Text('Batal', style: TextStyle(color: Colors.grey)),
             ),
             TextButton(
               // 2. JADIKAN ASYNC DI SINI
               onPressed: () async {
-                Navigator.pop(ctx); // Tutup dialog dulu
+                Navigator.pop(ctx);
                 
                 // 3. PROSES LOGOUT DARI FIREBASE (PENTING!)
                 await FirebaseAuth.instance.signOut();

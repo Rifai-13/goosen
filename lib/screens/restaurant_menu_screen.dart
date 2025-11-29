@@ -55,27 +55,24 @@ class RestaurantMenuScreen extends StatefulWidget {
 }
 
 class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
-  // List Menu Lokal
+
   late List<MenuItem> _menuItems;
 
   @override
   void initState() {
     super.initState();
-    
-    // SETUP DATA: Masukkan data yang dipilih user sebagai ITEM PERTAMA
-    // Kita tambahkan juga item pelengkap (Nasi/Minum) biar kayak resto beneran
     _menuItems = [
       // ITEM 1: Makanan yang dipilih user
       MenuItem(
         title: widget.selectedMenu.nama,
-        desc: widget.selectedMenu.deskripsi, // Ambil deskripsi asli
+        desc: widget.selectedMenu.deskripsi,
         price: widget.selectedMenu.harga,
         rating: widget.selectedMenu.rating,
-        reviewCount: widget.selectedMenu.terjual, // Pake data terjual
+        reviewCount: widget.selectedMenu.terjual, 
         imageUrl: widget.selectedMenu.gambar,
         quantity: 0, 
       ),
-      // ITEM 2: Item Tambahan (Dummy statis biar menu gak sepi)
+      // ITEM 2: Item Tambahan (Dummy)
       MenuItem(
         title: "Nasi Putih",
         desc: "Nasi putih pulen hangat.",
@@ -100,7 +97,7 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
   String formatCurrency(int amount) {
     return NumberFormat.currency(
       locale: 'id',
-      symbol: 'Rp ', // Tambah simbol Rp biar jelas
+      symbol: 'Rp ',
       decimalDigits: 0,
     ).format(amount);
   }
@@ -305,10 +302,10 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                 ),
                 const SizedBox(width: 16),
                 const Icon(Icons.location_on, size: 16, color: Colors.green),
-                 const SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Text(
                   widget.selectedMenu.distance,
-                   style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
