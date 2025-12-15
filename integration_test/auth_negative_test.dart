@@ -7,143 +7,115 @@ import 'package:goosen/main.dart' as app;
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('Negative Test Suite: Register & Login Validation', (WidgetTester tester) async {
-    
-    // 🛠️ PERSIAPAN
+  testWidgets('Negative Test Suite: Register & Login Validation', (
+    WidgetTester tester,
+  ) async {
+    // --- Setup & Config ---
     await Firebase.initializeApp();
-    
-    // Data Dummy
-    const String emailNgawur = 'budi_tanpa_at'; // Format salah
-    const String passwordPendek = '123'; // Kurang dari 6 karakter
-    const String emailValid = 'hacker@goosen.com';
-    const String passwordSalah = 'passwordngawur';
 
-    print('😈 NEGATIVE TEST DIMULAI (Register & Login)');
+    const String invalidEmail = 'user_no_at_symbol';
+    const String shortPassword = '123';
+    const String validEmail = 'hacker@goosen.com';
+    const String wrongPassword = 'wrongpassword123';
 
-    // ==========================================================
-    // 🚀 STEP 1: START APP (Splash -> Menu Awal)
-    // ==========================================================
+    print('Starting Negative Test Suite');
+
+    // --- 1. Start App (Splash -> Menu) ---
     await tester.pumpWidget(const app.MyApp());
-    
-    // Tunggu Splash & Navigasi selesai
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
-    
-    print('📍 Posisi: Menu Awal');
 
+    // --- 2. Register Validation Test ---
+    print('📍 Testing Register Input Validation...');
 
-    // ==========================================================
-    // 🔴 STEP 2: NEGATIVE TEST - REGISTER SCREEN
-    // ==========================================================
-    // Masuk ke halaman Register
     await tester.tap(find.text('Belum ada akun? Daftar dulu'));
     await tester.pumpAndSettle();
-    print('📍 Posisi: Register Screen');
 
-    // TEST A: Input Data Tidak Valid (Cek Tombol Mati)
-    print('🧪 Test Register 1: Input Email & Password Invalid...');
-    
-    // Isi field dengan data jelek
-    await tester.enterText(find.byKey(const Key('reg_name')), 'Budi');
-    await tester.enterText(find.byKey(const Key('reg_email')), emailNgawur); // Email Salah
-    await tester.enterText(find.byKey(const Key('reg_phone')), '08123'); // HP Kependekan
-    await tester.enterText(find.byKey(const Key('reg_password')), passwordPendek); // Pass < 6
+    // Input Invalid Data
+    await tester.enterText(find.byKey(const Key('reg_name')), 'Test User');
+    await tester.enterText(find.byKey(const Key('reg_email')), invalidEmail);
+    await tester.enterText(find.byKey(const Key('reg_phone')), '0812');
+    await tester.enterText(
+      find.byKey(const Key('reg_password')),
+      shortPassword,
+    );
     await tester.pump();
 
-    // Validasi: Tombol Register HARUS MATI (Disabled)
-    final ElevatedButton btnRegister = tester.widget(find.byKey(const Key('reg_button')));
-    
-    if (btnRegister.onPressed == null) {
-      print('✅ SUKSES REGISTER: Tombol Mati saat data invalid.');
-    } else {
-      print('❌ GAGAL REGISTER: Tombol masih nyala padahal data salah!');
-    }
+    // Assert: Register button must be disabled
+    final ElevatedButton btnRegister = tester.widget(
+      find.byKey(const Key('reg_button')),
+    );
+    expect(
+      btnRegister.onPressed,
+      isNull,
+      reason: 'Register button should be disabled for invalid input',
+    );
 
-    // --- PERBAIKAN DI SINI ---
-    // Keluar dari Register (Back ke Menu Awal)
-    print('🔙 Mencoba Kembali ke Menu Awal...');
-    
-    // 1. Tutup keyboard dulu biar tombol Back tidak ketutupan/kegeser
+    // Navigate Back to Menu
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
 
-    // 2. Cari tombol Back dengan Icon spesifik (bukan byType IconButton)
     final backButton = find.byIcon(Icons.arrow_back);
-    
-    // Pastikan tombolnya ketemu
     if (backButton.evaluate().isNotEmpty) {
       await tester.tap(backButton);
-      await tester.pumpAndSettle(); // Tunggu animasi pindah halaman
     } else {
-      // Cadangan: Kalau tombol UI gak ketemu, pake tombol Back Android System
-      print('⚠️ Tombol Back UI tidak ketemu, coba System Back...');
+      await tester.pageBack();
+    }
+    await tester.pumpAndSettle();
+
+    // --- 3. Login Validation Test ---
+    print('📍 Testing Login Validation...');
+
+    // Ensure we are at Menu before proceeding
+    if (find.text('Masuk').evaluate().isEmpty) {
       await tester.pageBack();
       await tester.pumpAndSettle();
     }
 
-
-    // ==========================================================
-    // 🔴 STEP 3: NEGATIVE TEST - LOGIN SCREEN
-    // ==========================================================
-    print('📍 Kembali ke Menu Awal -> Masuk Login');
-    
-    // Cek dulu apakah kita beneran sudah di Menu Awal?
-    if (find.text('Masuk').evaluate().isEmpty) {
-        print('😱 GAWAT: Masih stuck di Register. Memaksa System Back sekali lagi...');
-        await tester.pageBack();
-        await tester.pumpAndSettle();
-    }
-    
-    // Masuk ke halaman Login
     await tester.tap(find.text('Masuk'));
     await tester.pumpAndSettle();
 
-    // TEST B: Input Format Salah (Cek Tombol Mati)
-    print('🧪 Test Login 1: Cek Validasi Input...');
-    await tester.enterText(find.byKey(const Key('email_input')), emailNgawur);
-    await tester.pump();
-    
-    final ElevatedButton btnLogin = tester.widget(find.byKey(const Key('login_button')));
-    
-    if (btnLogin.onPressed == null) {
-      print('✅ SUKSES LOGIN: Tombol Mati saat email invalid.');
-    } else {
-      print('❌ GAGAL LOGIN: Tombol masih nyala padahal email salah!');
-    }
-
-
-    // TEST C: Input Benar tapi Password Salah (Cek Error Firebase)
-    print('🧪 Test Login 2: Coba Login Paksa (Wrong Password)...');
-
-    // Perbaiki input biar tombol nyala
-    await tester.enterText(find.byKey(const Key('email_input')), emailValid);
-    await tester.enterText(find.byKey(const Key('password_input')), passwordSalah);
+    // Scenario A: Invalid Email Format
+    await tester.enterText(find.byKey(const Key('email_input')), invalidEmail);
     await tester.pump();
 
-    // Tutup Keyboard (Wajib biar tombol kena klik)
+    final ElevatedButton btnLogin = tester.widget(
+      find.byKey(const Key('login_button')),
+    );
+    expect(
+      btnLogin.onPressed,
+      isNull,
+      reason: 'Login button should be disabled for invalid email format',
+    );
+
+    // Scenario B: Valid Input but Wrong Password (Firebase Check)
+    print('📍 Testing Login with Wrong Credentials...');
+
+    await tester.enterText(find.byKey(const Key('email_input')), validEmail);
+    await tester.enterText(
+      find.byKey(const Key('password_input')),
+      wrongPassword,
+    );
+    await tester.pump();
+
+    // Close Keyboard & Attempt Login
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
 
-    // Klik Login
     await tester.tap(find.byKey(const Key('login_button')));
-    
-    // Tunggu respon Firebase (biasanya cepat kalau error)
+
+    // Wait for Firebase Response
     await tester.pumpAndSettle(const Duration(seconds: 4));
 
-    // Validasi Error:
-    // 1. Pastikan TIDAK pindah ke Home (Teks 'Top Rated' tidak boleh ada)
+    // Assert: User should remain on Login Screen
     expect(find.text('Top Rated'), findsNothing);
-    
-    // 2. Pastikan masih di halaman Login
     expect(find.text('Login'), findsWidgets);
 
-    // 3. Cek SnackBar Error
+    // Assert: Error message appeared
     if (find.byType(SnackBar).evaluate().isNotEmpty) {
-       print('✅ SUKSES: Muncul Pesan Error dari Firebase.');
-    } else {
-       print('⚠️ WARNING: SnackBar tidak muncul (mungkin logic error handling beda).');
+      print('✅ Success: Error SnackBar appeared as expected.');
     }
 
-    print('🎉 SEMUA NEGATIVE TEST SELESAI!');
+    print('Negative Test Suite Completed Successfully.');
   });
 }

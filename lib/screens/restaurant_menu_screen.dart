@@ -26,6 +26,8 @@ class DashedLine extends StatelessWidget {
         final boxWidth = constraints.constrainWidth();
         final dashCount = (boxWidth / (2 * dashWidth)).floor();
         return Flex(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          direction: Axis.horizontal,
           children: List.generate(dashCount, (_) {
             return SizedBox(
               width: dashWidth,
@@ -33,8 +35,6 @@ class DashedLine extends StatelessWidget {
               child: DecoratedBox(decoration: BoxDecoration(color: color)),
             );
           }),
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          direction: Axis.horizontal,
         );
       },
     );
@@ -238,7 +238,7 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                         int index = entry.key;
                         MenuItem item = entry.value;
                         return _buildMenuItem(index, item);
-                      }).toList(),
+                      }),
                     ],
                   ),
                 ),

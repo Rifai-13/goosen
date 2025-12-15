@@ -423,7 +423,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ],
             ),
           );
-        }).toList(),
+        }),
         const Divider(height: 24),
         
         ElevatedButton.icon(
