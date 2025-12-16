@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:email_validator/email_validator.dart';
-import 'login_screen.dart';
+import 'login_screen.dart'; // Pastikan import ini sesuai struktur foldermu
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -53,7 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  // --- FUNGSI NOTIFIKASI DI ATAS ---
+  // --- FUNGSI NOTIFIKASI ---
   void _showTopNotification(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -87,8 +87,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // --- LOGIC REGISTER FIREBASE ---
   Future<void> _handleRegister() async {
     if (_isButtonActive) {
+      // Tutup keyboard sebelum proses dimulai
+      FocusScope.of(context).unfocus();
+
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -96,6 +100,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       try {
+        // 1. Buat User di Authentication
         UserCredential userCredential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
@@ -104,6 +109,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
         String uid = userCredential.user!.uid;
 
+        // 2. Simpan Data Tambahan di Firestore
         await FirebaseFirestore.instance.collection('users').doc(uid).set({
           'uid': uid,
           'name': _nameController.text.trim(),
@@ -113,15 +119,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'role': 'customer',
         });
 
+        // 3. Update Display Name di Auth
         await userCredential.user!.updateDisplayName(_nameController.text.trim());
 
-        if (context.mounted) Navigator.pop(context);
+        if (context.mounted) Navigator.pop(context); // Tutup Loading
 
         _showTopNotification("Registrasi Berhasil! Silakan Login.");
 
         await Future.delayed(const Duration(seconds: 2));
 
         if (context.mounted) {
+          // Pindah ke Login Screen
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -129,7 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
 
       } on FirebaseAuthException catch (e) {
-        if (context.mounted) Navigator.pop(context);
+        if (context.mounted) Navigator.pop(context); // Tutup Loading
         
         String message = 'Terjadi kesalahan.';
         if (e.code == 'email-already-in-use') {
@@ -162,103 +170,137 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Center(
-              child: Text(
-                'Register',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            _buildInputField('Nama', 'Nama Lengkap', _nameController, TextInputType.name),
-            const SizedBox(height: 20),
-
-            _buildInputField('Email', 'Email', _emailController, TextInputType.emailAddress),
-            const SizedBox(height: 20),
-
-            _buildInputField('Nomor Telepon', '08xxxxx', _phoneController, TextInputType.phone),
-            const SizedBox(height: 20),
-
-            _buildInputField(
-              'Password', 
-              'Password', 
-              _passwordController, 
-              TextInputType.visiblePassword, 
-              obscureText: !_isPasswordVisible, 
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.grey,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _isPasswordVisible = !_isPasswordVisible;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 30),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isButtonActive ? _handleRegister : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: buttonColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
+      
+      // 👇 PERUBAHAN UTAMA: BUNGKUS DENGAN GESTURE DETECTOR
+      body: GestureDetector(
+        onTap: () {
+          // Logic: Kalau layar disentuh di area kosong, tutup keyboard
+          FocusScope.of(context).unfocus();
+        },
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(
                 child: Text(
                   'Register',
-                  style: TextStyle(fontSize: 18, color: textColor, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
               ),
-            ),
-            const SizedBox(height: 78),
+              const SizedBox(height: 20),
 
-            Align(
-              alignment: Alignment.center,
-              child: RichText(
-                textAlign: TextAlign.center,
-                text: TextSpan(
-                  style: const TextStyle(fontSize: 14, color: Colors.black54),
-                  children: [
-                    const TextSpan(text: 'Saya menyetujui '),
-                    TextSpan(
-                      text: 'ketentuan Layanan',
-                      style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold),
-                    ),
-                    const TextSpan(text: ' & '),
-                    TextSpan(
-                      text: 'kebijakan Privasi',
-                      style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold),
-                    ),
-                    const TextSpan(text: ' Goosen.'),
-                  ],
+              // FIELD NAMA (Pakai Key: reg_name)
+              _buildInputField(
+                'Nama', 
+                'Nama Lengkap', 
+                _nameController, 
+                TextInputType.name,
+                fieldKey: const Key('reg_name'), 
+              ),
+              const SizedBox(height: 20),
+
+              // FIELD EMAIL (Pakai Key: reg_email)
+              _buildInputField(
+                'Email', 
+                'Email', 
+                _emailController, 
+                TextInputType.emailAddress,
+                fieldKey: const Key('reg_email'),
+              ),
+              const SizedBox(height: 20),
+
+              // FIELD PHONE (Pakai Key: reg_phone)
+              _buildInputField(
+                'Nomor Telepon', 
+                '08xxxxx', 
+                _phoneController, 
+                TextInputType.phone,
+                fieldKey: const Key('reg_phone'),
+              ),
+              const SizedBox(height: 20),
+
+              // FIELD PASSWORD (Pakai Key: reg_password)
+              _buildInputField(
+                'Password', 
+                'Password', 
+                _passwordController, 
+                TextInputType.visiblePassword, 
+                fieldKey: const Key('reg_password'),
+                obscureText: !_isPasswordVisible, 
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isPasswordVisible = !_isPasswordVisible;
+                    });
+                  },
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 30),
+
+              // TOMBOL REGISTER (Pakai Key: reg_button)
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  key: const Key('reg_button'), // Key untuk Testing
+                  onPressed: _isButtonActive ? _handleRegister : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: buttonColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Register',
+                    style: TextStyle(fontSize: 18, color: textColor, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 78),
+
+              // FOOTER TERMS
+              Align(
+                alignment: Alignment.center,
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                    children: [
+                      const TextSpan(text: 'Saya menyetujui '),
+                      TextSpan(
+                        text: 'ketentuan Layanan',
+                        style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold),
+                      ),
+                      const TextSpan(text: ' & '),
+                      TextSpan(
+                        text: 'kebijakan Privasi',
+                        style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold),
+                      ),
+                      const TextSpan(text: ' Goosen.'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // --- WIDGET INPUT FIELD YANG SUDAH DIUPDATE ---
+  // --- HELPER BUILD INPUT FIELD (Updated with Key) ---
   Widget _buildInputField(
     String label, 
     String hint, 
     TextEditingController controller, 
     TextInputType keyboardType, 
-    {bool obscureText = false, Widget? suffixIcon}
+    {bool obscureText = false, Widget? suffixIcon, Key? fieldKey}
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,25 +308,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         
-        // Langsung TextField tanpa Container pembungkus
         TextField(
+          key: fieldKey, // Key dipasang di sini
           controller: controller,
           keyboardType: keyboardType,
           obscureText: obscureText,
           textAlignVertical: TextAlignVertical.center,
-          
           style: const TextStyle(fontSize: 16, color: Colors.black),
           
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: Colors.grey.shade400),
-            
-            // Padding teks yang pas
             contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-            
             suffixIcon: suffixIcon,
-            
-            // BORDER SAAT NORMAL (ABU-ABU)
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
@@ -292,8 +328,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: 1.5
               ),
             ),
-
-            // BORDER SAAT DIKLIK/FOKUS (HIJAU)
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
@@ -301,7 +335,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: 2.0, 
               ),
             ),
-            
             filled: true,
             fillColor: Colors.white,
           ),

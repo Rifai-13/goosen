@@ -10,13 +10,13 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final ValueChanged<String>? onChanged; 
 
   const HomeAppBar({
-    Key? key,
+    super.key,
     required this.searchController,
     this.showProfile = true,
     this.onSearchTap,
     this.customLeading,
     this.onChanged, // 2. Masukkan ke constructor
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

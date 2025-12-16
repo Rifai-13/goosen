@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // 2. FUNGSI NOTIFIKASI (SAMA DENGAN REGISTER)
+  // 2. FUNGSI NOTIFIKASI
   void _showTopNotification(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -80,6 +80,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // 3. FUNGSI LOGIN KE FIREBASE
   Future<void> _handleLogin() async {
+    // Tutup keyboard saat tombol login ditekan
+    FocusScope.of(context).unfocus();
+
     if (_isButtonActive) {
       // Tampilkan Loading
       showDialog(
@@ -152,134 +155,144 @@ class _LoginScreenState extends State<LoginScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Center(
-              child: Text(
-                'Login',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 50),
-
-            // --- FIELD EMAIL ---
-            const Text(
-              'Email',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            _buildInputField(
-              controller: _emailController,
-              hint: 'Email',
-              keyboardType: TextInputType.emailAddress,
-            ),
-
-            const SizedBox(height: 24),
-
-            // --- FIELD PASSWORD (DENGAN MATA) ---
-            const Text(
-              'Password',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            _buildInputField(
-              controller: _passwordController,
-              hint: 'Password',
-              keyboardType: TextInputType.visiblePassword,
-              obscureText: !_isPasswordVisible,
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.grey,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _isPasswordVisible = !_isPasswordVisible;
-                  });
-                },
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            // --- TOMBOL LOGIN ---
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isButtonActive ? _handleLogin : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: buttonColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
+      // 👇 PERUBAHAN UTAMA DI SINI: GestureDetector
+      body: GestureDetector(
+        onTap: () {
+          // Logic: Tutup keyboard saat area kosong disentuh
+          FocusScope.of(context).unfocus();
+        },
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(
                 child: Text(
                   'Login',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: textColor,
-                    fontWeight: FontWeight.bold,
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 50),
+
+              // --- FIELD EMAIL ---
+              const Text(
+                'Email',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              _buildInputField(
+                fieldKey: const Key('email_input'),
+                controller: _emailController,
+                hint: 'Email',
+                keyboardType: TextInputType.emailAddress,
+              ),
+
+              const SizedBox(height: 24),
+
+              // --- FIELD PASSWORD (DENGAN MATA) ---
+              const Text(
+                'Password',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              _buildInputField(
+                fieldKey: const Key('password_input'),
+                controller: _passwordController,
+                hint: 'Password',
+                keyboardType: TextInputType.visiblePassword,
+                obscureText: !_isPasswordVisible,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isPasswordVisible = !_isPasswordVisible;
+                    });
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // --- TOMBOL LOGIN ---
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  key: const Key('login_button'),
+                  onPressed: _isButtonActive ? _handleLogin : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: buttonColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Login',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: textColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 230),
+              const SizedBox(height: 230),
 
-            // --- FOOTER TEKS ---
-            Align(
-              alignment: Alignment.center,
-              child: RichText(
-                textAlign: TextAlign.center,
-                text: TextSpan(
-                  style: const TextStyle(fontSize: 14, color: Colors.black54),
-                  children: [
-                    const TextSpan(text: 'Saya menyetujui '),
-                    TextSpan(
-                      text: 'ketentuan Layanan',
-                      style: TextStyle(
-                        color: Colors.green[700],
-                        fontWeight: FontWeight.bold,
+              // --- FOOTER TEKS ---
+              Align(
+                alignment: Alignment.center,
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                    children: [
+                      const TextSpan(text: 'Saya menyetujui '),
+                      TextSpan(
+                        text: 'ketentuan Layanan',
+                        style: TextStyle(
+                          color: Colors.green[700],
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const TextSpan(text: ' & '),
-                    TextSpan(
-                      text: 'kebijakan Privasi',
-                      style: TextStyle(
-                        color: Colors.green[700],
-                        fontWeight: FontWeight.bold,
+                      const TextSpan(text: ' & '),
+                      TextSpan(
+                        text: 'kebijakan Privasi',
+                        style: TextStyle(
+                          color: Colors.green[700],
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const TextSpan(text: ' Goosen.'),
-                  ],
+                      const TextSpan(text: ' Goosen.'),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // 4. HELPER WIDGET YANG SUDAH DIPERBAIKI POSISI TEXT-NYA
+  // 4. HELPER WIDGET
   Widget _buildInputField({
     required TextEditingController controller,
     required String hint,
     required TextInputType keyboardType,
+    Key? fieldKey,
     bool obscureText = false,
     Widget? suffixIcon,
   }) {
     return TextField(
+      key: fieldKey,
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-
       style: const TextStyle(fontSize: 16, color: Colors.black),
-
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey.shade400),

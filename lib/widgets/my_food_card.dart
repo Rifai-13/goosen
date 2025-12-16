@@ -11,14 +11,14 @@ class MyFoodCard extends StatelessWidget {
 
   // 2. Buat Constructor-nya
   const MyFoodCard({
-    Key? key,
+    super.key,
     required this.imageUrl,
     required this.title,
     required this.distance,
     required this.duration,
     required this.rating,
     required this.ratingCount,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
