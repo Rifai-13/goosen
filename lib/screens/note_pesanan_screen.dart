@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class NotePesananScreen extends StatefulWidget {
   final String initialNote;
 
-  const NotePesananScreen({
-    super.key,
-    this.initialNote = '',
-  });
+  const NotePesananScreen({super.key, this.initialNote = ''});
 
   @override
   State<NotePesananScreen> createState() => _NotePesananScreenState();
@@ -19,10 +17,25 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
 
   // Cukup kembalikan teks ke layar sebelumnya
   void _saveNote() {
-    Navigator.pop(context, _controller.text);
+    final String noteText = _controller.text;
+
+    // --- TAMBAHKAN ANALYTICS DI SINI ---
+    FirebaseAnalytics.instance.logEvent(
+      name: 'save_order_note',
+      parameters: {
+        'note_length': noteText.length,
+        'is_initial_note_empty': widget.initialNote.isEmpty,
+      },
+    );
+    if (mounted) {
+      Navigator.pop(context, noteText);
+    }
   }
-  
+
   void _clearNote() {
+    FirebaseAnalytics.instance.logEvent(
+      name: 'clear_order_note',
+    );
     setState(() {
       _controller.clear();
       Navigator.pop(context, '');
@@ -48,7 +61,8 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isSaveActive = _controller.text.isNotEmpty;
-    final bool showExamplePlaceholder = _controller.text.isEmpty && !_focusNode.hasFocus;
+    final bool showExamplePlaceholder =
+        _controller.text.isEmpty && !_focusNode.hasFocus;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -61,7 +75,11 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
         ),
         title: const Text(
           'Add notes to your dish',
-          style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: false,
         actions: [
@@ -72,7 +90,7 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
             ),
         ],
       ),
-      
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -108,14 +126,14 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
                       counterText: '',
-                      hintText: showExamplePlaceholder ? '' : null, 
+                      hintText: showExamplePlaceholder ? '' : null,
                     ),
                     style: const TextStyle(fontSize: 16),
                   ),
                 ],
               ),
             ),
-            
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -128,21 +146,26 @@ class _NotePesananScreenState extends State<NotePesananScreen> {
                     );
                   },
                 ),
-                
+
                 TextButton(
                   onPressed: isSaveActive ? _saveNote : null,
                   style: TextButton.styleFrom(
-                    backgroundColor: isSaveActive ? const Color(0xFF1E9C3C) : Colors.grey[300],
+                    backgroundColor: isSaveActive
+                        ? const Color(0xFF1E9C3C)
+                        : Colors.grey[300],
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                   ),
                   child: Text(
                     'Save',
                     style: TextStyle(
-                      color: isSaveActive ? Colors.white : Colors.black54, 
-                      fontWeight: FontWeight.bold
+                      color: isSaveActive ? Colors.white : Colors.black54,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),

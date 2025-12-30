@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class NoteDeliveryScreen extends StatefulWidget {
   final String initialNote;
 
-  const NoteDeliveryScreen({
-    super.key,
-    this.initialNote = '',
-  });
+  const NoteDeliveryScreen({super.key, this.initialNote = ''});
 
   @override
   State<NoteDeliveryScreen> createState() => _NoteDeliveryScreenState();
@@ -18,7 +16,7 @@ class _NoteDeliveryScreenState extends State<NoteDeliveryScreen> {
   late TextEditingController _controller;
   final int _maxLength = 200;
   final FocusNode _focusNode = FocusNode();
-  
+
   // Ambil user saat ini
   final User? user = FirebaseAuth.instance.currentUser;
 
@@ -45,12 +43,17 @@ class _NoteDeliveryScreenState extends State<NoteDeliveryScreen> {
     // 1. Simpan ke Firebase (Opsional: Simpan sebagai preferensi user)
     if (user != null) {
       try {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user!.uid)
-            .set({
-          'last_delivery_note': noteText,
-        }, SetOptions(merge: true));
+        await FirebaseFirestore.instance.collection('users').doc(user!.uid).set(
+          {'last_delivery_note': noteText},
+          SetOptions(merge: true),
+        );
+        await FirebaseAnalytics.instance.logEvent(
+          name: 'save_delivery_note',
+          parameters: {
+            'note_length': noteText.length,
+            'is_initial_note_empty': widget.initialNote.isEmpty,
+          },
+        );
       } catch (e) {
         debugPrint("Gagal simpan note ke Firebase: $e");
       }
@@ -62,7 +65,8 @@ class _NoteDeliveryScreenState extends State<NoteDeliveryScreen> {
     }
   }
 
-  void _clearNote() {
+  void _clearNote() async {
+    await FirebaseAnalytics.instance.logEvent(name: 'clear_delivery_note');
     setState(() {
       _controller.clear();
       Navigator.pop(context, '');
@@ -72,7 +76,8 @@ class _NoteDeliveryScreenState extends State<NoteDeliveryScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isSaveActive = _controller.text.isNotEmpty;
-    final bool showExamplePlaceholder = _controller.text.isEmpty && !_focusNode.hasFocus;
+    final bool showExamplePlaceholder =
+        _controller.text.isEmpty && !_focusNode.hasFocus;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -85,7 +90,11 @@ class _NoteDeliveryScreenState extends State<NoteDeliveryScreen> {
         ),
         title: const Text(
           'Delivery notes',
-          style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: false,
         actions: [
@@ -143,9 +152,16 @@ class _NoteDeliveryScreenState extends State<NoteDeliveryScreen> {
                 TextButton(
                   onPressed: isSaveActive ? _saveNote : null,
                   style: TextButton.styleFrom(
-                    backgroundColor: isSaveActive ? const Color(0xFF1E9C3C) : Colors.grey[300],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    backgroundColor: isSaveActive
+                        ? const Color(0xFF1E9C3C)
+                        : Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                   ),
                   child: Text(
                     'Save',

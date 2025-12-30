@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 // ==========================================
 // 1. MODEL DATA
@@ -44,8 +45,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: SizedBox(
           height: 50,
           child: ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              await FirebaseAnalytics.instance.logEvent(
+                name: 'apply_payment_method',
+                parameters: {'final_method': _selectedMethod},
+              );
+              if (mounted){
               Navigator.pop(context, _selectedMethod);
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1E9C3C),
@@ -102,16 +109,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
     bool isSelected = _selectedMethod == method.title;
 
     return InkWell(
-      onTap: () {
+      onTap: () async {
+        await FirebaseAnalytics.instance.logEvent(
+          name: 'select_payment_method',
+          parameters: {'method': method.title},
+        );
         setState(() {
           _selectedMethod = method.title;
         });
       },
       // Ganti margin di Container menjadi SizedBox antar item
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: 4.0,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           decoration: BoxDecoration(

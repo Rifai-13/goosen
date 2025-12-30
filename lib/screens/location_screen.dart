@@ -108,13 +108,24 @@ class _LocationScreenState extends State<LocationScreen> {
         child: SizedBox(
           height: 50,
           child: ElevatedButton(
-            onPressed: () async {
-              if (_selectedAddress != null) {
-                await FirebaseAnalytics.instance.logEvent(
-                  name: 'apply_shipping_location',
-                  parameters: {'has_address': true},
+            onPressed: () {
+              if (_selectedAddress == null) {
+                // Beri tahu user kalau alamat belum dipilih
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Pilih alamat dulu, bro!"),
+                    backgroundColor: Colors.red,
+                  ),
                 );
+                return;
               }
+
+              // Kirim analytics tanpa await
+              FirebaseAnalytics.instance.logEvent(
+                name: 'apply_shipping_location',
+                parameters: {'has_address': true},
+              );
+
               Navigator.pop(context, _selectedAddress);
             },
             style: ElevatedButton.styleFrom(
@@ -252,11 +263,11 @@ class _LocationScreenState extends State<LocationScreen> {
     bool isSelected,
   ) {
     return InkWell(
-      onTap: () async {
+      onTap: () {
         setState(() {
           _selectedAddress = address;
         });
-        await FirebaseAnalytics.instance.logSelectItem(
+        FirebaseAnalytics.instance.logSelectItem(
           itemListName: 'Saved Addresses',
           items: [
             AnalyticsEventItem(
