@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:goosen/screens/main_screen.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -98,9 +99,10 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _passwordController.text.trim(),
         );
 
+        await FirebaseAnalytics.instance.logLogin(loginMethod: 'email');
+
         // Jika berhasil (tidak error), tutup loading
         if (context.mounted) Navigator.pop(context);
-
         _showTopNotification("Login Berhasil! Selamat Datang.");
 
         // Delay sedikit
@@ -116,9 +118,16 @@ class _LoginScreenState extends State<LoginScreen> {
       } on FirebaseAuthException catch (e) {
         // Tutup loading jika error
         if (context.mounted) Navigator.pop(context);
-
         String message = 'Terjadi kesalahan login.';
 
+        await FirebaseAnalytics.instance.logEvent(
+          name: 'login_failed',
+          parameters: {
+            'error_code': e.code,
+            'email': _emailController.text.trim(),
+          },
+        );
+        
         // Cek error code dari Firebase
         if (e.code == 'user-not-found') {
           message = 'Email tidak terdaftar.';
@@ -203,7 +212,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: !_isPasswordVisible,
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                    _isPasswordVisible
+                        ? Icons.visibility
+                        : Icons.visibility_off,
                     color: Colors.grey,
                   ),
                   onPressed: () {

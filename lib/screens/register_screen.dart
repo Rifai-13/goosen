@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:email_validator/email_validator.dart';
-import 'login_screen.dart'; // Pastikan import ini sesuai struktur foldermu
+import 'login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -122,8 +123,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         // 3. Update Display Name di Auth
         await userCredential.user!.updateDisplayName(_nameController.text.trim());
 
-        if (context.mounted) Navigator.pop(context); // Tutup Loading
+      // --- TAMBAHKAN ANALYTICS DI SINI (SUCCESS) ---
+        await FirebaseAnalytics.instance.logSignUp(
+          signUpMethod: 'email_password',
+        );
 
+        if (context.mounted) Navigator.pop(context);
         _showTopNotification("Registrasi Berhasil! Silakan Login.");
 
         await Future.delayed(const Duration(seconds: 2));
@@ -137,7 +142,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
 
       } on FirebaseAuthException catch (e) {
-        if (context.mounted) Navigator.pop(context); // Tutup Loading
+        if (context.mounted) Navigator.pop(context);
+        
+        // --- OPSIONAL: TRACK REGISTRASI GAGAL ---
+        await FirebaseAnalytics.instance.logEvent(
+          name: 'sign_up_failed',
+          parameters: {
+            'error_code': e.code,
+            'email': _emailController.text.trim(),
+          },
+        );
         
         String message = 'Terjadi kesalahan.';
         if (e.code == 'email-already-in-use') {

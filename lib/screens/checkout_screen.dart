@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-// IMPORT FIREBASE
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import '../models/menu_item.dart';
 
-import '../models/menu_item.dart'; // Pastikan path model benar
-
-// File screen lain
 import 'location_screen.dart';
 import 'payment_screen.dart';
 import 'order_success_screen.dart';
@@ -67,15 +65,15 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   int _selectedDeliveryIndex = 1;
   String _currentPaymentMethod = 'Cash Money';
-  
+
   // Note untuk Makanan (Sementara di memory)
   String _itemNote = '';
-  
+
   // Note untuk Pengiriman (Delivery Location)
-  String _deliveryNote = ''; 
+  String _deliveryNote = '';
 
   // Alamat Default Kosong (Wajib pilih)
-  String _deliveryAddress = ""; 
+  String _deliveryAddress = "";
 
   final Map<String, IconData> _paymentIcons = {
     'Cash Money': Icons.money,
@@ -240,7 +238,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final String noteButtonLabel = _deliveryNote.isNotEmpty
         ? 'edit catatan'
         : 'Catatan';
-    
+
     bool isAddressEmpty = _deliveryAddress.isEmpty;
 
     return Column(
@@ -280,6 +278,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   setState(() {
                     _deliveryNote = newNote;
                   });
+                  await FirebaseAnalytics.instance.logEvent(
+                    name: 'add_delivery_note',
+                    parameters: {'note_length': newNote.length},
+                  );
                 }
               },
               icon: Icon(
@@ -315,6 +317,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   setState(() {
                     _deliveryAddress = selectedLocation;
                   });
+                  await FirebaseAnalytics.instance.logAddShippingInfo(
+                    shippingTier: deliveryOptions[_selectedDeliveryIndex].title,
+                    value: _total.toDouble(),
+                    currency: 'IDR',
+                    items: widget.cartItems
+                        .map((e) => AnalyticsEventItem(itemName: e.title))
+                        .toList(),
+                  );
                 }
               },
               icon: const Icon(
@@ -327,7 +337,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 style: const TextStyle(color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isAddressEmpty ? Colors.red : const Color(0xFF1E9C3C),
+                backgroundColor: isAddressEmpty
+                    ? Colors.red
+                    : const Color(0xFF1E9C3C),
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -377,11 +389,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     width: 60,
                     height: 60,
                     fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, stack) => Container(
-                      width: 60,
-                      height: 60,
-                      color: Colors.grey,
-                    ),
+                    errorBuilder: (ctx, err, stack) =>
+                        Container(width: 60, height: 60, color: Colors.grey),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -425,7 +434,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           );
         }),
         const Divider(height: 24),
-        
+
         ElevatedButton.icon(
           onPressed: () async {
             final newNote = await Navigator.push(
@@ -489,6 +498,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           setState(() {
             _currentPaymentMethod = selectedMethod;
           });
+          await FirebaseAnalytics.instance.logAddPaymentInfo(
+            paymentType: selectedMethod,
+            value: _total.toDouble(),
+            currency: 'IDR',
+          );
         }
       },
       child: Row(
@@ -583,7 +597,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               if (isAddressEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text("Harap pilih alamat pengiriman terlebih dahulu!"),
+                    content: Text(
+                      "Harap pilih alamat pengiriman terlebih dahulu!",
+                    ),
                     backgroundColor: Colors.red,
                     behavior: SnackBarBehavior.floating,
                   ),
@@ -597,46 +613,51 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               );
 
               try {
-                // 3. Ambil User Login Saat Ini
                 User? user = FirebaseAuth.instance.currentUser;
-                if (user == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("User tidak terdeteksi. Silakan login.")),
-                  );
-                  return;
-                }
+                if (user == null) return;
 
-                // 4. SUSUN DATA UNTUK DIKIRIM KE FIREBASE 'orders'
-                // Ini akan menggabungkan semua data dari halaman ini
-                await FirebaseFirestore.instance.collection('orders').add({
-                  'userId': user.uid,
-                  'createdAt': FieldValue.serverTimestamp(),
-                  'status': 'pending',
-                  
-                  // -- Info Harga --
-                  'subtotal': _subtotal,
-                  'deliveryFee': _deliveryFee,
-                  'totalPrice': _total,
-                  'paymentMethod': _currentPaymentMethod,
+                // --- PERUBAHAN DI SINI: Tambahkan 'DocumentReference docRef =' ---
+                DocumentReference docRef = await FirebaseFirestore.instance
+                    .collection('orders')
+                    .add({
+                      'userId': user.uid,
+                      'createdAt': FieldValue.serverTimestamp(),
+                      'status': 'pending',
+                      'subtotal': _subtotal,
+                      'deliveryFee': _deliveryFee,
+                      'totalPrice': _total,
+                      'paymentMethod': _currentPaymentMethod,
+                      'deliveryOption':
+                          deliveryOptions[_selectedDeliveryIndex].title,
+                      'deliveryAddress': _deliveryAddress,
+                      'deliveryNote': _deliveryNote,
+                      'orderNote': _itemNote,
+                      'items': widget.cartItems.map((item) {
+                        return {
+                          'title': item.title,
+                          'price': item.price,
+                          'quantity': item.quantity,
+                          'image': item.imageUrl,
+                        };
+                      }).toList(),
+                    });
 
-                  // -- Info Pengiriman --
-                  'deliveryOption': deliveryOptions[_selectedDeliveryIndex].title,
-                  'deliveryAddress': _deliveryAddress,
-                  'deliveryNote': _deliveryNote,
-
-                  // -- Info Makanan & Note Makanan --
-                  'orderNote': _itemNote,
-                  
-                  // -- Daftar Barang yang Dibeli (Array) --
-                  'items': widget.cartItems.map((item) {
-                    return {
-                      'title': item.title,
-                      'price': item.price,
-                      'quantity': item.quantity,
-                      'image': item.imageUrl,
-                    };
-                  }).toList(),
-                });
+                await FirebaseAnalytics.instance.logPurchase(
+                  transactionId: docRef.id,
+                  value: _total.toDouble(),
+                  currency: 'IDR',
+                  tax: 0,
+                  shipping: _deliveryFee.toDouble(),
+                  items: widget.cartItems
+                      .map(
+                        (item) => AnalyticsEventItem(
+                          itemName: item.title,
+                          quantity: item.quantity,
+                          price: item.price.toDouble(),
+                        ),
+                      )
+                      .toList(),
+                );
 
                 // 5. SUKSES! Pindah ke layar sukses dan hapus stack sebelumnya
                 if (context.mounted) {
@@ -647,7 +668,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                   );
                 }
-
               } catch (e) {
                 // Kalau Error (misal internet mati)
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -656,7 +676,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: isAddressEmpty ? Colors.grey : const Color(0xFF1E9C3C),
+              backgroundColor: isAddressEmpty
+                  ? Colors.grey
+                  : const Color(0xFF1E9C3C),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),

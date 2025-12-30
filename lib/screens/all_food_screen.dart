@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/menu_makanan.dart';
 import '../widgets/home_appbar.dart';
 import '../screens/restaurant_menu_screen.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class AllFoodScreen extends StatefulWidget {
   const AllFoodScreen({super.key});
@@ -16,18 +17,18 @@ class AllFoodScreen extends StatefulWidget {
 
 class _AllFoodScreenState extends State<AllFoodScreen> {
   late final TextEditingController _searchController;
-  
+
   // 1. KITA BUTUH 2 LIST
   List<MenuMakanan> _allMenu = [];
   List<MenuMakanan> _filteredMenu = [];
-  
+
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    fetchAllMenu(); 
+    fetchAllMenu();
   }
 
   Future<void> fetchAllMenu() async {
@@ -37,15 +38,21 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
 
       if (response.statusCode == 200) {
         final List<dynamic> dataJSON = json.decode(response.body);
-        
+
         // Convert ke List Model
-        final resultList = dataJSON.map((json) => MenuMakanan.fromJson(json)).toList();
+        final resultList = dataJSON
+            .map((json) => MenuMakanan.fromJson(json))
+            .toList();
 
         setState(() {
           _allMenu = resultList;
           _filteredMenu = resultList;
           isLoading = false;
         });
+        await FirebaseAnalytics.instance.logViewItemList(
+          itemListId: "all_menu_list",
+          itemListName: "All Food Screen",
+        );
       } else {
         throw Exception('Gagal load data');
       }
@@ -59,13 +66,14 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
   void _runFilter(String keyword) {
     List<MenuMakanan> results = [];
     if (keyword.isEmpty) {
-      // Kalau search kosong, kembalikan ke data master (semua menu)
       results = _allMenu;
     } else {
-      // Filter berdasarkan nama (Case Insensitive)
       results = _allMenu
-          .where((item) => item.nama.toLowerCase().contains(keyword.toLowerCase()))
+          .where(
+            (item) => item.nama.toLowerCase().contains(keyword.toLowerCase()),
+          )
           .toList();
+      FirebaseAnalytics.instance.logSearch(searchTerm: keyword);
     }
 
     // Update UI
@@ -87,10 +95,10 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
       appBar: HomeAppBar(
         searchController: _searchController,
         showProfile: false,
-        
+
         // 3. SAMBUNGKAN FUNGSI SEARCH DISINI
         onChanged: (value) => _runFilter(value),
-        
+
         customLeading: IconButton(
           icon: const Icon(Icons.close, size: 28, color: Colors.black),
           onPressed: () {
@@ -107,10 +115,10 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                     // Menampilkan jumlah hasil pencarian
+                    // Menampilkan jumlah hasil pencarian
                     Text(
-                      _searchController.text.isNotEmpty 
-                          ? 'Found ${_filteredMenu.length} results' 
+                      _searchController.text.isNotEmpty
+                          ? 'Found ${_filteredMenu.length} results'
                           : 'All Menu Available',
                       style: const TextStyle(
                         fontSize: 18,
@@ -127,9 +135,16 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
                             padding: const EdgeInsets.only(top: 50),
                             child: const Column(
                               children: [
-                                Icon(Icons.search_off, size: 60, color: Colors.grey),
+                                Icon(
+                                  Icons.search_off,
+                                  size: 60,
+                                  color: Colors.grey,
+                                ),
                                 SizedBox(height: 10),
-                                Text("Yah, makanannya nggak ketemu bro :(", style: TextStyle(color: Colors.grey)),
+                                Text(
+                                  "Yah, makanannya nggak ketemu bro :(",
+                                  style: TextStyle(color: Colors.grey),
+                                ),
                               ],
                             ),
                           )
@@ -158,12 +173,22 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
     final itemWidth = (screenWidth - 32 - 16) / 2;
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        await FirebaseAnalytics.instance.logSelectItem(
+        itemListName: "All Food Screen Search Results",
+        items: [
+          AnalyticsEventItem(
+            itemId: item.id.toString(), // Pastikan model MenuMakanan punya ID
+            itemName: item.nama,
+            itemCategory: "Food",
+            price: double.tryParse(item.harga.toString()),
+          ),
+        ],
+      );
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => RestaurantMenuScreen(selectedMenu: item),
-            
           ),
         );
       },
@@ -185,7 +210,9 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12.0)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12.0),
+              ),
               child: Image.network(
                 item.gambar,
                 height: itemWidth,
@@ -194,7 +221,9 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
                 errorBuilder: (ctx, error, stack) => Container(
                   height: itemWidth,
                   color: Colors.grey[200],
-                  child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+                  child: const Center(
+                    child: Icon(Icons.broken_image, color: Colors.grey),
+                  ),
                 ),
               ),
             ),
@@ -211,7 +240,9 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
                   Text(
                     item.nama,
                     style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.bold),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -223,7 +254,9 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
                       Text(
                         '${item.rating}',
                         style: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.bold),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -236,7 +269,10 @@ class _AllFoodScreenState extends State<AllFoodScreen> {
                   Text(
                     "Rp ${item.harga}",
                     style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w600, color: Colors.green),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green,
+                    ),
                   ),
                 ],
               ),

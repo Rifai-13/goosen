@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/menu_makanan.dart';
 import 'checkout_screen.dart';
 import '../models/menu_item.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 // ==========================================
 // 2. WIDGET DASHED LINE
@@ -46,7 +47,7 @@ class DashedLine extends StatelessWidget {
 // ==========================================
 class RestaurantMenuScreen extends StatefulWidget {
   // TERIMA DATA DARI HALAMAN SEBELUMNYA
-  final MenuMakanan selectedMenu; 
+  final MenuMakanan selectedMenu;
 
   const RestaurantMenuScreen({super.key, required this.selectedMenu});
 
@@ -55,7 +56,6 @@ class RestaurantMenuScreen extends StatefulWidget {
 }
 
 class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
-
   late List<MenuItem> _menuItems;
 
   @override
@@ -68,9 +68,9 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
         desc: widget.selectedMenu.deskripsi,
         price: widget.selectedMenu.harga,
         rating: widget.selectedMenu.rating,
-        reviewCount: widget.selectedMenu.terjual, 
+        reviewCount: widget.selectedMenu.terjual,
         imageUrl: widget.selectedMenu.gambar,
-        quantity: 0, 
+        quantity: 0,
       ),
       // ITEM 2: Item Tambahan (Dummy)
       MenuItem(
@@ -79,7 +79,8 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
         price: 5000,
         rating: 4.5,
         reviewCount: "5k+",
-        imageUrl: "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=500&q=80",
+        imageUrl:
+            "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=500&q=80",
       ),
       // ITEM 3: Minuman (Dummy)
       MenuItem(
@@ -88,9 +89,20 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
         price: 4000,
         rating: 4.8,
         reviewCount: "10k+",
-        imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=500&q=80",
+        imageUrl:
+            "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=500&q=80",
       ),
     ];
+    FirebaseAnalytics.instance.logViewItem(
+      currency: 'IDR',
+      value: widget.selectedMenu.harga.toDouble(),
+      items: [
+        AnalyticsEventItem(
+          itemName: widget.selectedMenu.nama,
+          itemCategory: 'Restaurant Menu',
+        ),
+      ],
+    );
   }
 
   // Helper format duit
@@ -143,16 +155,36 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(30),
-              onTap: () {
+              onTap: () async {
                 if (totalItems > 0) {
-                  final List<MenuItem> cartItems = _menuItems.where((item) => item.quantity > 0).toList();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          CheckoutScreen(initialSubtotal: totalPrice, cartItems: cartItems, orderTitle: widget.selectedMenu.nama,),
-                    ),
+                  final List<MenuItem> cartItems = _menuItems
+                      .where((item) => item.quantity > 0)
+                      .toList();
+                  await FirebaseAnalytics.instance.logBeginCheckout(
+                    value: totalPrice.toDouble(),
+                    currency: 'IDR',
+                    items: cartItems
+                        .map(
+                          (e) => AnalyticsEventItem(
+                            itemName: e.title,
+                            quantity: e.quantity,
+                            price: e.price.toDouble(),
+                          ),
+                        )
+                        .toList(),
                   );
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CheckoutScreen(
+                          initialSubtotal: totalPrice,
+                          cartItems: cartItems,
+                          orderTitle: widget.selectedMenu.nama,
+                        ),
+                      ),
+                    );
+                  }
                 }
               },
               child: Padding(
@@ -427,7 +459,9 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(0.1),
+                                            color: Colors.black.withOpacity(
+                                              0.1,
+                                            ),
                                             blurRadius: 4,
                                             offset: const Offset(0, 2),
                                           ),
@@ -442,6 +476,13 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                                               setState(() {
                                                 item.quantity--;
                                               });
+                                              FirebaseAnalytics.instance
+                                                  .logEvent(
+                                                    name: 'remove_from_cart',
+                                                    parameters: {
+                                                      'item_name': item.title,
+                                                    },
+                                                  );
                                             },
                                             child: const Icon(
                                               Icons.remove,
@@ -461,6 +502,20 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                                               setState(() {
                                                 item.quantity++;
                                               });
+                                              FirebaseAnalytics.instance
+                                                  .logAddToCart(
+                                                    items: [
+                                                      AnalyticsEventItem(
+                                                        itemName: item.title,
+                                                        price: item.price
+                                                            .toDouble(),
+                                                        quantity: 1,
+                                                      ),
+                                                    ],
+                                                    value: item.price
+                                                        .toDouble(),
+                                                    currency: 'IDR',
+                                                  );
                                             },
                                             child: const Icon(
                                               Icons.add,
@@ -476,20 +531,35 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
                                         setState(() {
                                           item.quantity = 1;
                                         });
+                                        FirebaseAnalytics.instance.logAddToCart(
+                                          items: [
+                                            AnalyticsEventItem(
+                                              itemName: item.title,
+                                              price: item.price.toDouble(),
+                                              quantity: 1,
+                                            ),
+                                          ],
+                                          value: item.price.toDouble(),
+                                          currency: 'IDR',
+                                        );
                                       },
                                       child: Container(
                                         height: 32,
                                         width: 80,
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
                                           border: Border.all(
                                             color: Colors.green,
                                             width: 1,
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(0.1),
+                                              color: Colors.black.withOpacity(
+                                                0.1,
+                                              ),
                                               blurRadius: 4,
                                               offset: const Offset(0, 2),
                                             ),
